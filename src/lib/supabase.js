@@ -672,6 +672,23 @@ export async function updateOrganizationInDB(orgId, updates) {
 // ============================================================================
 
 /**
+ * Map category string to valid donor_category enum value
+ */
+function mapCategory(category) {
+    const categoryMap = {
+        'Foundation': 'Foundation',
+        'Corporate': 'Corporate',
+        'Individual': 'Individual',
+        'Individual Donor': 'Individual',
+        'Government': 'Government',
+        'Government Grant': 'Government',
+        'International': 'Other',
+        'Other': 'Other',
+    };
+    return categoryMap[category] || 'Foundation';
+}
+
+/**
  * Save AI-generated donor search results to the database
  * Creates donors in bulk and links them to a campaign
  */
@@ -693,19 +710,24 @@ export async function saveAIDonorResults(campaignId, donors, userId) {
     }
     
     try {
-        // Prepare donors for insertion (only columns that exist in DB)
+        // Prepare donors for insertion (only columns that exist in donors table)
+        // Note: alignment_score goes in campaign_donors, not donors
         const donorsToInsert = donors.map(donor => ({
             name: donor.name,
-            category: donor.category || 'Foundation',
+            category: mapCategory(donor.category),
             city: donor.location?.split(',')[0]?.trim() || null,
             state: donor.location?.split(',')[1]?.trim() || null,
             website: donor.website || null,
             focus_areas: donor.focus_areas || null,
-            funding_range: donor.funding_range || null,
-            alignment_score: donor.alignment_score || null,
             total_assets: donor.total_assets || null,
             total_giving: donor.annual_giving || null,
             description: donor.description || null,
+            // 990-PF fields
+            ein: donor.ein ? String(donor.ein) : null,
+            fiscal_year_end: donor.fiscal_year_end || null,
+            principal_officer: donor.principal_officer || null,
+            officers: donor.officers || [],
+            grants: donor.recent_grants || [],
         }));
         
         // Insert donors in bulk
@@ -721,13 +743,14 @@ export async function saveAIDonorResults(campaignId, donors, userId) {
         
         console.log('✅ [Supabase] Inserted', insertedDonors.length, 'donors');
         
-        // Link donors to campaign
+        // Link donors to campaign with alignment scores
         if (campaignId && insertedDonors.length > 0) {
-            const campaignDonors = insertedDonors.map(donor => ({
+            const campaignDonors = insertedDonors.map((insertedDonor, index) => ({
                 campaign_id: campaignId,
-                donor_id: donor.id,
-                pipeline_stage: 'research',
-                ai_recommendation: donor.ai_insights?.description || null,
+                donor_id: insertedDonor.id,
+                stage: 'research',
+                alignment_score: donors[index]?.alignment_score || null,
+                ai_recommendation: donors[index]?.description || null,
             }));
             
             const { error: linkError } = await supabase
