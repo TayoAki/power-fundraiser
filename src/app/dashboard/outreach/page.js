@@ -483,14 +483,60 @@ Best regards,
         let orgs = [];
         
         if (campaignId && campaignId !== 'all') {
-            // Load from campaign donors
-            const donorsWithDetails = getCampaignDonorsWithDetails(campaignId);
-            orgs = donorsWithDetails
-                .filter(d => !d.isRejected && d.foundation)
-                .map(d => transformToOrganization(d.foundation, d.contacts || []));
+            // First try to load from cachedDonors (AI-generated)
+            const campaign = getCampaignById(campaignId);
+            if (campaign?.cachedDonors && campaign.cachedDonors.length > 0) {
+                orgs = campaign.cachedDonors.map(donor => ({
+                    id: donor.id,
+                    name: donor.name,
+                    initials: donor.name.split(' ').map(w => w[0]).join('').slice(0, 2),
+                    location: donor.location || 'Unknown',
+                    funding: donor.funding_range || '$50K - $200K',
+                    status: 'Active',
+                    step: null,
+                    contactCount: 0,
+                    contacts: [],
+                    foundation: donor,
+                    focusAreas: donor.focus_areas,
+                    alignmentScore: donor.alignment_score,
+                    aiInsights: { summary: donor.description },
+                }));
+            } else {
+                // Fall back to campaign donors with details
+                const donorsWithDetails = getCampaignDonorsWithDetails(campaignId);
+                orgs = donorsWithDetails
+                    .filter(d => !d.isRejected && d.foundation)
+                    .map(d => transformToOrganization(d.foundation, d.contacts || []));
+            }
         }
         
-        // If no campaign data or 'all' selected, show all foundations
+        // If no campaign data or 'all' selected, load from all campaigns' cachedDonors
+        if (orgs.length === 0) {
+            const allCampaigns = getCampaigns();
+            allCampaigns.forEach(campaign => {
+                if (campaign.cachedDonors && campaign.cachedDonors.length > 0) {
+                    campaign.cachedDonors.forEach(donor => {
+                        orgs.push({
+                            id: donor.id,
+                            name: donor.name,
+                            initials: donor.name.split(' ').map(w => w[0]).join('').slice(0, 2),
+                            location: donor.location || 'Unknown',
+                            funding: donor.funding_range || '$50K - $200K',
+                            status: 'Active',
+                            step: null,
+                            contactCount: 0,
+                            contacts: [],
+                            foundation: donor,
+                            focusAreas: donor.focus_areas,
+                            alignmentScore: donor.alignment_score,
+                            aiInsights: { summary: donor.description },
+                        });
+                    });
+                }
+            });
+        }
+        
+        // Final fallback to mock foundations
         if (orgs.length === 0) {
             orgs = MOCK_FOUNDATIONS.map(f => {
                 const contacts = getContactsForFoundation(f.id);

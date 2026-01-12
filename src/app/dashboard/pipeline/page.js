@@ -129,6 +129,34 @@ export default function PipelinePage() {
     };
 
     const loadPipelineData = (campaignId) => {
+        // First try to load from cachedDonors (AI-generated)
+        const campaign = getCampaignById(campaignId);
+        if (campaign?.cachedDonors && campaign.cachedDonors.length > 0) {
+            const fundingAmounts = [500, 250, 100, 150, 75, 200, 50, 300, 125, 80, 175, 225];
+            const pipelineDonors = campaign.cachedDonors.map((donor, index) => ({
+                id: donor.id,
+                name: donor.name,
+                initials: donor.name.split(' ').map(w => w[0]).join('').slice(0, 2),
+                stage: 'research',
+                fundingAmount: fundingAmounts[index % fundingAmounts.length] * 1000,
+                lastActivity: 'Recently added',
+                location: donor.location || 'Unknown',
+                focus: donor.focus_areas?.split(',')[0]?.trim() || 'General',
+                networkScore: 45,
+                missionScore: donor.alignment_score || 75,
+                financialScore: donor.total_assets > 5000000000 ? 'High' : donor.total_assets > 1000000000 ? 'Medium' : 'Low',
+                aiRecommendation: donor.description || 'Continue building the relationship through regular touchpoints.',
+                recommendedAmount: donor.funding_range || '$50K - $100K',
+                totalAssets: donor.total_assets,
+                recentActivity: generateRecentActivity(donor, 'research'),
+                foundation: donor,
+                contacts: [],
+            }));
+            setPipelineData(pipelineDonors);
+            return;
+        }
+        
+        // Fall back to getCampaignDonorsWithDetails
         const donorsWithDetails = getCampaignDonorsWithDetails(campaignId);
         
         // If campaign has no donors, fall back to mock data
@@ -173,11 +201,34 @@ export default function PipelinePage() {
     const handleCampaignChange = (campaignId) => {
         if (campaignId === 'all') {
             setCampaignFilter('all');
-            // Load all campaigns' donors
+            // Load all campaigns' cachedDonors first
             const allDonors = [];
+            const fundingAmounts = [500, 250, 100, 150, 75, 200, 50, 300, 125, 80, 175, 225];
+            
             campaigns.forEach(c => {
-                const donors = getCampaignDonorsWithDetails(c.id);
-                allDonors.push(...donors.filter(d => !d.isRejected && d.foundation));
+                if (c.cachedDonors && c.cachedDonors.length > 0) {
+                    c.cachedDonors.forEach((donor, index) => {
+                        allDonors.push({
+                            id: donor.id,
+                            name: donor.name,
+                            initials: donor.name.split(' ').map(w => w[0]).join('').slice(0, 2),
+                            stage: 'research',
+                            fundingAmount: fundingAmounts[index % fundingAmounts.length] * 1000,
+                            lastActivity: 'Recently added',
+                            location: donor.location || 'Unknown',
+                            focus: donor.focus_areas?.split(',')[0]?.trim() || 'General',
+                            networkScore: 45,
+                            missionScore: donor.alignment_score || 75,
+                            financialScore: donor.total_assets > 5000000000 ? 'High' : donor.total_assets > 1000000000 ? 'Medium' : 'Low',
+                            aiRecommendation: donor.description || 'Continue building the relationship.',
+                            recommendedAmount: donor.funding_range || '$50K - $100K',
+                            totalAssets: donor.total_assets,
+                            recentActivity: generateRecentActivity(donor, 'research'),
+                            foundation: donor,
+                            contacts: [],
+                        });
+                    });
+                }
             });
             
             // Fall back to mock data if no donors exist
@@ -186,39 +237,7 @@ export default function PipelinePage() {
                 return;
             }
             
-            // Dedupe and transform
-            const seen = new Set();
-            const pipelineDonors = allDonors
-                .filter(d => {
-                    if (seen.has(d.foundationId)) return false;
-                    seen.add(d.foundationId);
-                    return true;
-                })
-                .map((d, index) => {
-                    const contacts = MOCK_CONTACTS.filter(c => c.foundationId === d.foundationId);
-                    const fundingAmounts = [500, 250, 100, 150, 75, 200, 50, 300, 125, 80, 175, 225];
-                    const fundingAmount = fundingAmounts[index % fundingAmounts.length] * 1000;
-                    return {
-                        id: d.foundationId,
-                        name: d.foundation.name,
-                        initials: d.foundation.name.split(' ').map(w => w[0]).join('').slice(0, 2),
-                        stage: d.stage || 'research',
-                        fundingAmount: fundingAmount,
-                        lastActivity: d.addedAt ? `Added ${new Date(d.addedAt).toLocaleDateString()}` : 'Recently added',
-                        location: `${d.foundation.city}, ${d.foundation.state}`,
-                        focus: d.foundation.focus_areas?.split(',')[0]?.trim() || 'General',
-                        networkScore: contacts.some(c => c.connectionDegree === '1st') ? 85 : contacts.some(c => c.connectionDegree === '2nd') ? 65 : 45,
-                        missionScore: d.alignmentScore || d.foundation.alignment_score || 75,
-                        financialScore: d.foundation.total_assets > 5000000000 ? 'High' : d.foundation.total_assets > 1000000000 ? 'Medium' : 'Low',
-                        aiRecommendation: d.foundation.ai_insights?.approachStrategy || 'Continue building the relationship.',
-                        recommendedAmount: d.foundation.funding_range || '$50K - $100K',
-                        totalAssets: d.foundation.total_assets,
-                        recentActivity: generateRecentActivity(d.foundation, d.stage || 'research'),
-                        foundation: d.foundation,
-                        contacts: contacts,
-                    };
-                });
-            setPipelineData(pipelineDonors);
+            setPipelineData(allDonors);
         } else {
             const campaign = getCampaignById(campaignId);
             if (campaign) {
