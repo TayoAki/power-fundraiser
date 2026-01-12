@@ -438,6 +438,39 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Website Link - uses AI-found URL if donor website is missing */}
+                                {(donor.website || insights.websiteUrl) && (
+                                    <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                                        <a
+                                            href={donor.website || insights.websiteUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                padding: '10px 20px',
+                                                backgroundColor: '#3B82F6',
+                                                color: 'white',
+                                                borderRadius: '8px',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                textDecoration: 'none',
+                                            }}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <line x1="2" y1="12" x2="22" y2="12" />
+                                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                            </svg>
+                                            Visit Website
+                                            {!donor.website && insights.websiteUrl && (
+                                                <span style={{ fontSize: '0.6875rem', opacity: 0.8 }}>(AI Found)</span>
+                                            )}
+                                        </a>
+                                    </div>
+                                )}
                             </div>
                         )}
 

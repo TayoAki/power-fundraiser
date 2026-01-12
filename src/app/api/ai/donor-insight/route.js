@@ -18,6 +18,9 @@ Analyze the donor/foundation and provide comprehensive, specific insights in JSO
 - decisionMakers: Who typically makes funding decisions
 - bestTimeToApply: When to submit proposals based on their cycle
 - competitiveAdvantage: Your unique strengths for this donor
+- websiteUrl: The official website URL for this foundation/donor (search for it if not provided)
+
+IMPORTANT: If the donor's website is not provided or is empty, use your knowledge to find their official website URL. For foundations, this is typically their .org website. Include this in the websiteUrl field.
 
 Return a JSON object with this schema:
 {
@@ -27,7 +30,8 @@ Return a JSON object with this schema:
   "grantHistory": "Typical grant patterns...",
   "decisionMakers": "Key decision makers...",
   "bestTimeToApply": "Optimal timing...",
-  "competitiveAdvantage": "Your unique strengths..."
+  "competitiveAdvantage": "Your unique strengths...",
+  "websiteUrl": "https://www.foundationwebsite.org"
 }`;
 
 export async function POST(request) {
@@ -123,7 +127,8 @@ Provide actionable, specific recommendations based on the donor's giving pattern
                 grantHistory: "This foundation typically makes grants in the range shown above. They tend to support organizations with established track records in their focus areas.",
                 decisionMakers: "Contact the program officer or executive director for initial outreach.",
                 bestTimeToApply: "Review their website for application deadlines. Most foundations have quarterly or annual cycles.",
-                competitiveAdvantage: "Your mission alignment and local presence make you a strong candidate."
+                competitiveAdvantage: "Your mission alignment and local presence make you a strong candidate.",
+                websiteUrl: null
             },
             fallback: true,
             error: error.message,
