@@ -181,6 +181,35 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                                 Passed
                             </span>
                         )}
+                        {/* Website Link Indicator */}
+                        {donor.website && (
+                            <a
+                                href={donor.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '3px 8px',
+                                    backgroundColor: '#eff6ff',
+                                    color: '#3b82f6',
+                                    fontSize: '0.625rem',
+                                    fontWeight: 600,
+                                    borderRadius: '4px',
+                                    textDecoration: 'none',
+                                    border: '1px solid #bfdbfe',
+                                }}
+                            >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                </svg>
+                                Website
+                            </a>
+                        )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '6px', fontSize: '0.8125rem', color: '#64748b' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
