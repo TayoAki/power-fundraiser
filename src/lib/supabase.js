@@ -898,8 +898,18 @@ export async function loadCampaignsFromDB(orgId, userId) {
         const { data, error } = await query;
         
         if (error) {
-            console.error('❌ [Supabase] Error loading campaigns:', error);
-            throw error;
+            // Check if it's a "table doesn't exist" error - fail silently and use localStorage
+            if (error.code === '42P01' || error.message?.includes('does not exist') || error.code === 'PGRST116') {
+                console.warn('⚠️ [Supabase] Campaigns table not found - using localStorage fallback');
+                return [];
+            }
+            console.error('❌ [Supabase] Error loading campaigns:', error.message || error.code || error);
+            return []; // Return empty instead of throwing to allow localStorage fallback
+        }
+        
+        if (!data) {
+            console.log('📭 [Supabase] No campaigns found');
+            return [];
         }
         
         // Transform to match expected format
@@ -918,7 +928,8 @@ export async function loadCampaignsFromDB(orgId, userId) {
         console.log('✅ [Supabase] Loaded', campaigns.length, 'campaigns');
         return campaigns;
     } catch (error) {
-        console.error('❌ [Supabase] loadCampaignsFromDB failed:', error);
+        // Silently fail - localStorage will be used as fallback
+        console.warn('⚠️ [Supabase] loadCampaignsFromDB failed, using localStorage:', error.message || 'Unknown error');
         return [];
     }
 }
