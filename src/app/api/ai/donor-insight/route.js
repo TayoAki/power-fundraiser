@@ -8,27 +8,26 @@
 import { NextResponse } from 'next/server';
 import { generateJSON } from '@/lib/openrouter';
 
-const INSIGHT_PROMPT = `You are an expert nonprofit fundraising strategist. Generate a personalized strategy insight for approaching a potential donor/foundation.
+const INSIGHT_PROMPT = `You are an expert fundraising strategist and grant writer with deep knowledge of foundation research, donor cultivation, and nonprofit fundraising. Your role is to provide actionable insights and strategic guidance for approaching potential donors.
 
-Based on the donor's 990-PF data and the nonprofit's mission, provide:
-1. A strategic summary (2-3 sentences) explaining why this donor is a good fit
-2. A suggested approach strategy (3-4 sentences) with specific action steps
-3. Key talking points (3-5 bullet points) to use when reaching out
-
-Consider:
-- The donor's giving history and focus areas
-- Geographic alignment
-- The nonprofit's mission and programs
-- Best practices for foundation outreach
-- Timing and deadlines
+Analyze the donor/foundation and provide comprehensive, specific insights in JSON format with these fields:
+- summary: A compelling 2-3 sentence explanation of why this donor is an excellent match
+- keyOpportunities: Array of 3-5 specific funding opportunities or programs
+- approachStrategy: Detailed 3-4 sentence strategy for how to approach this donor
+- grantHistory: 2-3 sentences about their typical grant patterns
+- decisionMakers: Who typically makes funding decisions
+- bestTimeToApply: When to submit proposals based on their cycle
+- competitiveAdvantage: Your unique strengths for this donor
 
 Return a JSON object with this schema:
 {
-  "summary": "Strategic insight summary...",
-  "approachStrategy": "Step-by-step approach recommendation...",
-  "talkingPoints": ["Point 1", "Point 2", "Point 3"],
-  "estimatedTimeline": "2-4 weeks",
-  "confidenceScore": 85
+  "summary": "Compelling explanation of donor match...",
+  "keyOpportunities": ["Opportunity 1", "Opportunity 2", "Opportunity 3"],
+  "approachStrategy": "Detailed approach strategy...",
+  "grantHistory": "Typical grant patterns...",
+  "decisionMakers": "Key decision makers...",
+  "bestTimeToApply": "Optimal timing...",
+  "competitiveAdvantage": "Your unique strengths..."
 }`;
 
 export async function POST(request) {
@@ -114,15 +113,17 @@ Provide actionable, specific recommendations based on the donor's giving pattern
         return NextResponse.json({
             success: true,
             insight: {
-                summary: "This foundation's focus areas and giving history suggest strong alignment with your mission. Consider reaching out to their program officer with a personalized introduction.",
-                approachStrategy: "Begin with a brief introductory email highlighting shared values. Follow up with a formal letter of inquiry within 2 weeks. Request an informational call to discuss potential alignment.",
-                talkingPoints: [
-                    "Highlight your organization's track record in their focus areas",
-                    "Mention geographic alignment if applicable",
-                    "Reference similar grants they've made to comparable organizations"
+                summary: "This foundation's focus areas and giving history suggest strong alignment with your mission. Their track record of supporting similar organizations makes them an excellent prospect.",
+                keyOpportunities: [
+                    "General operating support",
+                    "Program-specific funding",
+                    "Capacity building grants"
                 ],
-                estimatedTimeline: "4-6 weeks",
-                confidenceScore: 70,
+                approachStrategy: "Begin with a brief introductory email highlighting shared values. Follow up with a formal letter of inquiry within 2 weeks. Request an informational call to discuss potential alignment. Prepare a concise one-pager about your organization.",
+                grantHistory: "This foundation typically makes grants in the range shown above. They tend to support organizations with established track records in their focus areas.",
+                decisionMakers: "Contact the program officer or executive director for initial outreach.",
+                bestTimeToApply: "Review their website for application deadlines. Most foundations have quarterly or annual cycles.",
+                competitiveAdvantage: "Your mission alignment and local presence make you a strong candidate."
             },
             fallback: true,
             error: error.message,
