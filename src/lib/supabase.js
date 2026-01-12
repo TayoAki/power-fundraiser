@@ -710,8 +710,10 @@ export async function saveAIDonorResults(campaignId, donors, userId) {
     }
     
     try {
-        // Prepare donors for insertion (only columns that exist in donors table)
-        // Note: alignment_score goes in campaign_donors, not donors
+        // Prepare donors for insertion
+        // NOTE: Only include columns that EXIST in the live Supabase database
+        // See SUPABASE_NOTES.md for schema mismatch details
+        // Missing columns: fiscal_year_end, principal_officer, officers, grants
         const donorsToInsert = donors.map(donor => ({
             name: donor.name,
             category: mapCategory(donor.category),
@@ -722,12 +724,7 @@ export async function saveAIDonorResults(campaignId, donors, userId) {
             total_assets: donor.total_assets || null,
             total_giving: donor.annual_giving || null,
             description: donor.description || null,
-            // 990-PF fields
             ein: donor.ein ? String(donor.ein) : null,
-            fiscal_year_end: donor.fiscal_year_end || null,
-            principal_officer: donor.principal_officer || null,
-            officers: donor.officers || [],
-            grants: donor.recent_grants || [],
         }));
         
         // Insert donors in bulk
