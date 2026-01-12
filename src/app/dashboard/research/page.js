@@ -1256,7 +1256,7 @@ export default function DonorResearchPage() {
                                                         <span style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.875rem' }}>{campaign.name}</span>
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '16px', fontSize: '0.875rem', color: '#64748b' }}>{campaign.donors?.length || 0}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.875rem', color: '#64748b' }}>{campaign.cachedDonors?.length || campaign.donors?.length || 0}</td>
                                                 <td style={{ padding: '16px' }}>
                                                     <span style={{
                                                         padding: '4px 10px',
