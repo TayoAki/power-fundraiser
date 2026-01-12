@@ -88,18 +88,26 @@ const LOADING_STAGES = [
     },
 ];
 
-export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
+export function SearchConfigModal({ open, onOpenChange, onSubmit, initialCampaignName = "", initialFocusAreas = "" }) {
     const [formData, setFormData] = React.useState({
         campaignName: "",
         organizationName: "",
         organizationMission: "",
         strategicGoals: "",
         focusAreas: "",
-        targetRegion: "Pacific Northwest (USA)",
-        grantSize: "$100k - $500k",
-        causeAreas: [],
         zipCode: "",
     });
+    
+    // Update form when initial values change
+    React.useEffect(() => {
+        if (open) {
+            setFormData(prev => ({
+                ...prev,
+                campaignName: initialCampaignName || prev.campaignName,
+                focusAreas: initialFocusAreas || prev.focusAreas,
+            }));
+        }
+    }, [open, initialCampaignName, initialFocusAreas]);
     const [isLoading, setIsLoading] = React.useState(false);
     const [loadingStage, setLoadingStage] = React.useState(0);
     const [animatingStep, setAnimatingStep] = React.useState(0);
@@ -160,13 +168,6 @@ export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
         formData.campaignName &&
         formData.organizationMission &&
         formData.strategicGoals;
-
-    const handleCauseRemove = (cause) => {
-        setFormData(prev => ({
-            ...prev,
-            causeAreas: prev.causeAreas.filter(c => c !== cause)
-        }));
-    };
 
     const handleSubmit = async () => {
         console.log('========================================');
@@ -522,7 +523,7 @@ export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
                         {[
                             { num: 1, label: 'Campaign', complete: !!formData.campaignName },
                             { num: 2, label: 'Mission', complete: !!formData.organizationMission && !!formData.strategicGoals },
-                            { num: 3, label: 'Criteria', complete: formData.causeAreas.length > 0 },
+                            { num: 3, label: 'Details', complete: !!formData.focusAreas || !!formData.zipCode },
                         ].map((step, i) => {
                             const isAnimating = animatingStep === i;
                             const isComplete = step.complete;
@@ -788,144 +789,6 @@ export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
                             />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#64748b', marginBottom: '8px' }}>
-                                    Target Region
-                                </label>
-                                <div style={{ position: 'relative' }}>
-                                    <select
-                                        value={formData.targetRegion}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, targetRegion: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            padding: '14px 40px 14px 16px',
-                                            border: '1px solid #e2e8f0',
-                                            borderRadius: '10px',
-                                            fontSize: '0.9375rem',
-                                            color: '#1e293b',
-                                            outline: 'none',
-                                            appearance: 'none',
-                                            backgroundColor: 'white',
-                                            cursor: 'pointer',
-                                            boxSizing: 'border-box',
-                                        }}
-                                    >
-                                        {REGIONS.map(region => (
-                                            <option key={region} value={region}>{region}</option>
-                                        ))}
-                                    </select>
-                                    <svg
-                                        style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"
-                                    >
-                                        <path d="M6 9l6 6 6-6" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#64748b', marginBottom: '8px' }}>
-                                    Grant Size
-                                </label>
-                                <div style={{ position: 'relative' }}>
-                                    <select
-                                        value={formData.grantSize}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, grantSize: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            padding: '14px 40px 14px 16px',
-                                            border: '1px solid #e2e8f0',
-                                            borderRadius: '10px',
-                                            fontSize: '0.9375rem',
-                                            color: '#1e293b',
-                                            outline: 'none',
-                                            appearance: 'none',
-                                            backgroundColor: 'white',
-                                            cursor: 'pointer',
-                                            boxSizing: 'border-box',
-                                        }}
-                                    >
-                                        {GRANT_SIZES.map(size => (
-                                            <option key={size} value={size}>{size}</option>
-                                        ))}
-                                    </select>
-                                    <svg
-                                        style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"
-                                    >
-                                        <path d="M6 9l6 6 6-6" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#64748b', marginBottom: '10px' }}>
-                                Cause Areas
-                            </label>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-                                {formData.causeAreas.map(cause => (
-                                    <span
-                                        key={cause}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            padding: '8px 14px',
-                                            background: 'linear-gradient(135deg, #1B365D 0%, #2a4a7a 100%)',
-                                            color: 'white',
-                                            fontSize: '0.8125rem',
-                                            fontWeight: 500,
-                                            borderRadius: '100px',
-                                        }}
-                                    >
-                                        {cause}
-                                        <button
-                                            onClick={() => handleCauseRemove(cause)}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                border: 'none',
-                                                background: 'rgba(255, 255, 255, 0.2)',
-                                                cursor: 'pointer',
-                                                color: 'white',
-                                                padding: '2px',
-                                                borderRadius: '50%',
-                                            }}
-                                        >
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <path d="M18 6L6 18M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </span>
-                                ))}
-                                <input
-                                    type="text"
-                                    placeholder="+ Add area"
-                                    style={{
-                                        padding: '8px 14px',
-                                        border: '1px dashed #cbd5e1',
-                                        borderRadius: '100px',
-                                        fontSize: '0.8125rem',
-                                        color: '#64748b',
-                                        outline: 'none',
-                                        width: '100px',
-                                        background: 'transparent',
-                                    }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && e.target.value) {
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                causeAreas: [...prev.causeAreas, e.target.value]
-                                            }));
-                                            e.target.value = '';
-                                        }
-                                    }}
-                                />
-                            </div>
-                        </div>
                     </div>
                 </div>
 

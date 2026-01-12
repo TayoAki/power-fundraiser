@@ -1724,9 +1724,9 @@ export default function DonorResearchPage() {
                                                 </td>
                                                 <td style={{ padding: '16px', fontSize: '0.8125rem', color: '#94a3b8' }}>
                                                     {campaign.lastActivityAt 
-                                                        ? new Date(campaign.lastActivityAt).toLocaleDateString() 
+                                                        ? new Date(campaign.lastActivityAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
                                                         : campaign.createdAt 
-                                                            ? new Date(campaign.createdAt).toLocaleDateString() 
+                                                            ? new Date(campaign.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
                                                             : 'Recently'}
                                                 </td>
                                                 <td style={{ padding: '16px' }}>
@@ -2218,6 +2218,8 @@ export default function DonorResearchPage() {
                 open={isModalOpen}
                 onOpenChange={setIsModalOpen}
                 onSubmit={handleSearchConfig}
+                initialCampaignName={campaignName}
+                initialFocusAreas={searchQuery}
             />
 
             {/* Floating Pipeline Action Bar - only show after search with results */}
