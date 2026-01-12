@@ -950,26 +950,29 @@ export async function updateCampaignCache(campaignId, donors) {
     }
     
     try {
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from('campaigns')
             .update({
                 cached_donors: donors,
                 last_activity_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             })
-            .eq('id', campaignId)
-            .select()
-            .single();
+            .eq('id', campaignId);
         
         if (error) {
-            console.error('❌ [Supabase] Error caching donors:', error);
+            // Silently fail if columns don't exist - this is expected until migration is run
+            if (error.code === '42703' || error.message?.includes('column') || error.code === 'PGRST116') {
+                console.log('⚠️ [Supabase] Campaign cache columns not available yet');
+                return null;
+            }
+            console.warn('⚠️ [Supabase] Cache update failed:', error.message || error.code);
             return null;
         }
         
         console.log('✅ [Supabase] Cached', donors.length, 'donors');
-        return data;
+        return true;
     } catch (error) {
-        console.error('❌ [Supabase] updateCampaignCache failed:', error);
+        // Silently fail - localStorage cache will be used instead
         return null;
     }
 }
@@ -984,15 +987,20 @@ export async function touchCampaignActivity(campaignId) {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
     
     try {
-        await supabase
+        const { error } = await supabase
             .from('campaigns')
             .update({
                 last_activity_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             })
             .eq('id', campaignId);
+        
+        // Silently ignore column/schema errors
+        if (error && !error.message?.includes('column')) {
+            console.log('⚠️ [Supabase] Activity update skipped');
+        }
     } catch (error) {
-        console.warn('⚠️ [Supabase] Failed to update campaign activity:', error);
+        // Silently fail
     }
 }
 
