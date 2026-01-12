@@ -1,66 +1,173 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
 
-export default function Home() {
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mode, setMode] = useState('login'); // 'login' or 'signup'
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      if (mode === 'signup') {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (signUpError) throw signUpError;
+        
+        // Auto-login after signup for dev (in prod, may require email verification)
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('userEmail', email);
+        sessionStorage.setItem('userId', data.user?.id || '');
+        router.push('/dashboard/settings');
+      } else {
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (signInError) throw signInError;
+        
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('userEmail', email);
+        sessionStorage.setItem('userId', data.user?.id || '');
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      console.error('Auth error:', err);
+      setError(err.message || 'Authentication failed');
+      
+      // Fallback to demo mode for development
+      if (err.message?.includes('Invalid login') || err.message?.includes('Email not confirmed')) {
+        setError(err.message + ' (Use demo mode below)');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = () => {
+    setLoading(true);
+    sessionStorage.setItem('isLoggedIn', 'true');
+    sessionStorage.setItem('userEmail', 'demo@nonprofit.org');
+    sessionStorage.setItem('userId', 'demo-user');
+    router.push('/dashboard');
+  };
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="login-container">
+      <div className="login-card">
+        <div className="login-logo" style={{ background: 'none', width: 'auto', height: 'auto' }}>
+          <img src="/logo.png" alt="Power Fundraiser" style={{ width: '180px', height: 'auto' }} />
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <h2 className="login-title">{mode === 'signup' ? 'Create Account' : 'Welcome Back'}</h2>
+        <p className="login-subtitle">
+          {mode === 'signup' 
+            ? 'Start your donor intelligence journey' 
+            : 'Sign in to access your donor intelligence dashboard'}
+        </p>
+
+        {error && (
+          <div className="login-error" style={{ 
+            background: 'rgba(239, 68, 68, 0.1)', 
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            color: '#ef4444',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            fontSize: '0.875rem'
+          }}>
+            {error}
+          </div>
+        )}
+
+        <form className="login-form" onSubmit={handleAuth}>
+          <div className="form-group">
+            <label className="form-label">Email Address</label>
+            <input
+              type="email"
+              className="form-input"
+              placeholder="you@nonprofit.org"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input
+              type="password"
+              className="form-input"
+              placeholder={mode === 'signup' ? 'Create a password (6+ chars)' : 'Enter your password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
+              required
+            />
+          </div>
+
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? (mode === 'signup' ? 'Creating Account...' : 'Signing in...') : (mode === 'signup' ? 'Create Account' : 'Sign In')}
+          </button>
+        </form>
+
+        <div style={{ textAlign: 'center', margin: '16px 0' }}>
+          <button 
+            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#C9A227', 
+              cursor: 'pointer',
+              fontSize: '0.875rem'
+            }}
           >
-            Documentation
-          </a>
+            {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+          </button>
         </div>
-      </main>
+
+        <div style={{ 
+          borderTop: '1px solid #e2e8f0', 
+          paddingTop: '16px', 
+          marginTop: '16px' 
+        }}>
+          <button 
+            onClick={handleDemoLogin}
+            type="button"
+            style={{ 
+              width: '100%',
+              padding: '12px 16px',
+              background: '#f1f5f9',
+              border: '2px solid #e2e8f0',
+              borderRadius: '8px',
+              color: '#64748b',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+            }}
+            disabled={loading}
+          >
+            🚀 Try Demo Mode (No Login Required)
+          </button>
+        </div>
+
+        <p className="login-footer">
+          Powered by AI • Built for Fundraisers
+        </p>
+      </div>
     </div>
   );
 }
