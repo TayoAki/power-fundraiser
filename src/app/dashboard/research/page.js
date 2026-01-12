@@ -380,6 +380,43 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                                         </button>
                                     )}
                                 </div>
+
+                                {/* Loading State */}
+                                {isGenerating && !generatedInsight && (
+                                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                                        <div style={{ 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center', 
+                                            gap: '12px',
+                                            padding: '16px 24px',
+                                            backgroundColor: 'white',
+                                            borderRadius: '12px',
+                                            border: '1px solid #e2e8f0',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                                        }}>
+                                            <div style={{
+                                                width: '24px',
+                                                height: '24px',
+                                                border: '3px solid #f1f5f9',
+                                                borderTopColor: '#C9A227',
+                                                borderRadius: '50%',
+                                                animation: 'spin 1s linear infinite'
+                                            }} />
+                                            <div>
+                                                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>
+                                                    Loading AI Insights...
+                                                </div>
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                                                    Analyzing donor data and finding opportunities
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Content - only show when not loading */}
+                                {(!isGenerating || generatedInsight) && (
+                                <>
                                 {/* Why This is a Great Match */}
                                 <div style={{ marginBottom: '16px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
@@ -479,6 +516,7 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                                         </a>
                                     </div>
                                 )}
+                                </>)}
                             </div>
                         )}
 
