@@ -105,6 +105,29 @@ Error: relation "campaigns" does not exist
 SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
 ```
 
+### Supabase Join Queries Require Foreign Keys
+
+**Problem:** Query with nested select failed:
+```javascript
+.select(`*, campaign_donors (count)`)
+// Error: "Could not find a relationship between 'campaigns' and 'campaign_donors'"
+```
+
+**Root Cause:**
+- Supabase's nested select syntax requires a foreign key relationship
+- Even if both tables exist, the FK constraint must be defined
+- Our migration defined `campaign_donors.campaign_id REFERENCES campaigns(id)` but it wasn't applied
+
+**Fix:** Use simple queries that don't require joins:
+```javascript
+.select('*')  // Works without foreign key
+```
+
+**Rule:** When writing Supabase queries:
+1. Don't assume relationships exist
+2. Use simple `select('*')` for reliability
+3. If you need joined data, do separate queries
+
 ---
 
 ## Last Updated
