@@ -996,6 +996,17 @@ export default function DonorResearchPage() {
         } catch (error) {
             console.error('❌ [Research] AI Search ERROR:', error.message);
             console.error('❌ [Research] Full error:', error);
+            
+            // Check if it's a network/timeout error
+            if (error.message?.includes('NetworkError') || error.message?.includes('fetch')) {
+                console.error('⚠️ [Research] Network error - likely caused by:');
+                console.error('   1. Dev server rebuild (Fast Refresh) during API call');
+                console.error('   2. Browser timeout on long API call (~100+ seconds)');
+                console.error('   3. Network interruption');
+                console.error('💡 TIP: Avoid saving files while search is running');
+                alert('Search interrupted. The AI search takes ~2 minutes. Please try again and avoid making code changes during the search.');
+            }
+            
             // Fallback to mock data on error
             setDonors(MOCK_FOUNDATIONS);
             if (MOCK_FOUNDATIONS.length > 0) {
