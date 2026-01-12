@@ -880,12 +880,10 @@ export async function loadCampaignsFromDB(orgId, userId) {
     }
     
     try {
+        // Simple query - don't try to join with campaign_donors as relationship may not exist
         let query = supabase
             .from('campaigns')
-            .select(`
-                *,
-                campaign_donors (count)
-            `)
+            .select('*')
             .order('last_activity_at', { ascending: false, nullsFirst: false });
         
         // Filter by org or user if provided
@@ -921,7 +919,7 @@ export async function loadCampaignsFromDB(orgId, userId) {
             createdAt: c.created_at,
             lastActivityAt: c.last_activity_at || c.updated_at || c.created_at,
             cachedDonors: c.cached_donors || [],
-            donorCount: c.campaign_donors?.[0]?.count || 0,
+            donorCount: c.prospects_count || (c.cached_donors?.length || 0),
             donors: [], // Will be populated when campaign is selected
         }));
         
