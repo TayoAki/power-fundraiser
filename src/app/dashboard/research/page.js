@@ -941,8 +941,8 @@ export default function DonorResearchPage() {
         setAvailableCampaigns(updatedCampaigns);
         
         try {
-            // Use AI-powered donor search
-            console.log('🤖 [Research] API REQUEST to /api/ai/donor-search');
+            // Use polling-based AI donor search
+            console.log('🤖 [Research] Starting polling-based search...');
             const apiParams = {
                 organizationName: config.organizationName || config.campaignName,
                 mission: config.organizationMission || config.causeAreas?.join(', ') || '',
@@ -952,21 +952,53 @@ export default function DonorResearchPage() {
             };
             console.log('🤖 [Research] Params:', JSON.stringify(apiParams, null, 2));
             
-            const startTime = Date.now();
-            const response = await fetch('/api/ai/donor-search', {
+            // Step 1: Start the search job
+            const startResponse = await fetch('/api/ai/donor-search/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(apiParams),
             });
-            const result = await response.json();
-            const elapsed = Date.now() - startTime;
+            const startResult = await startResponse.json();
             
+            if (!startResult.success || !startResult.jobId) {
+                throw new Error(startResult.error || 'Failed to start search job');
+            }
+            
+            const jobId = startResult.jobId;
+            console.log('🚀 [Research] Job started:', jobId);
+            
+            // Step 2: Poll for results
+            const startTime = Date.now();
+            const maxWaitTime = 5 * 60 * 1000; // 5 minutes max
+            const pollInterval = 3000; // Poll every 3 seconds
+            
+            let result = null;
+            while (Date.now() - startTime < maxWaitTime) {
+                await new Promise(resolve => setTimeout(resolve, pollInterval));
+                
+                const statusResponse = await fetch(`/api/ai/donor-search/status?jobId=${jobId}`);
+                const statusResult = await statusResponse.json();
+                
+                console.log('🔄 [Research] Poll status:', statusResult.status, '| Progress:', statusResult.progress + '%', '|', statusResult.stage);
+                
+                if (statusResult.status === 'complete') {
+                    result = statusResult;
+                    break;
+                }
+                
+                if (statusResult.status === 'error') {
+                    throw new Error(statusResult.error || 'Search failed');
+                }
+            }
+            
+            if (!result) {
+                throw new Error('Search timed out after 5 minutes');
+            }
+            
+            const elapsed = Date.now() - startTime;
             console.log('🤖 [Research] API RESPONSE received in', elapsed, 'ms');
-            console.log('🤖 [Research] Response status:', response.status);
             console.log('🤖 [Research] Success:', result.success);
             console.log('🤖 [Research] Donor count:', result.donors?.length);
-            console.log('🤖 [Research] Error (if any):', result.error);
-            console.log('🤖 [Research] Raw result keys:', Object.keys(result));
             console.log('📋 [Research] FULL API RESPONSE JSON:', JSON.stringify(result, null, 2));
             if (result.donors?.[0]) {
                 console.log('📋 [Research] FIRST DONOR FULL JSON:', JSON.stringify(result.donors[0], null, 2));
@@ -996,16 +1028,6 @@ export default function DonorResearchPage() {
         } catch (error) {
             console.error('❌ [Research] AI Search ERROR:', error.message);
             console.error('❌ [Research] Full error:', error);
-            
-            // Check if it's a network/timeout error
-            if (error.message?.includes('NetworkError') || error.message?.includes('fetch')) {
-                console.error('⚠️ [Research] Network error - likely caused by:');
-                console.error('   1. Dev server rebuild (Fast Refresh) during API call');
-                console.error('   2. Browser timeout on long API call (~100+ seconds)');
-                console.error('   3. Network interruption');
-                console.error('💡 TIP: Avoid saving files while search is running');
-                alert('Search interrupted. The AI search takes ~2 minutes. Please try again and avoid making code changes during the search.');
-            }
             
             // Fallback to mock data on error
             setDonors(MOCK_FOUNDATIONS);
