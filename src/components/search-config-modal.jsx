@@ -90,6 +90,7 @@ const LOADING_STAGES = [
 export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
     const [formData, setFormData] = React.useState({
         campaignName: "",
+        organizationName: "",
         organizationMission: "",
         strategicGoals: "",
         targetRegion: "Pacific Northwest (USA)",
@@ -100,6 +101,28 @@ export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
     const [isLoading, setIsLoading] = React.useState(false);
     const [loadingStage, setLoadingStage] = React.useState(0);
     const [animatingStep, setAnimatingStep] = React.useState(0);
+
+    // Load organization settings from localStorage when modal opens
+    React.useEffect(() => {
+        if (!open) return;
+        
+        // Load org settings from onboarding
+        const storedOrgSettings = localStorage.getItem('orgSettings');
+        if (storedOrgSettings) {
+            try {
+                const orgSettings = JSON.parse(storedOrgSettings);
+                console.log('📋 [Modal] Loaded org settings:', orgSettings);
+                setFormData(prev => ({
+                    ...prev,
+                    organizationName: orgSettings.name || prev.organizationName,
+                    organizationMission: orgSettings.mission || prev.organizationMission,
+                    zipCode: orgSettings.zipCode || prev.zipCode,
+                }));
+            } catch (e) {
+                console.warn('Failed to parse org settings:', e);
+            }
+        }
+    }, [open]);
 
     // Looping animation for the progress steps while user fills form
     React.useEffect(() => {
