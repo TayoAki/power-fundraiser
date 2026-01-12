@@ -548,7 +548,7 @@ export async function saveAIDonorResults(campaignId, donors, userId) {
     }
     
     try {
-        // Prepare donors for insertion
+        // Prepare donors for insertion (only columns that exist in DB)
         const donorsToInsert = donors.map(donor => ({
             name: donor.name,
             category: donor.category || 'Foundation',
@@ -560,13 +560,7 @@ export async function saveAIDonorResults(campaignId, donors, userId) {
             alignment_score: donor.alignment_score || null,
             total_assets: donor.total_assets || null,
             total_giving: donor.annual_giving || null,
-            ai_insights: {
-                description: donor.description,
-                source: 'ai_search',
-                generated_at: new Date().toISOString(),
-            },
-            source: 'ai_generated',
-            created_by: userId || null,
+            description: donor.description || null,
         }));
         
         // Insert donors in bulk
@@ -662,7 +656,7 @@ export async function loadCampaignDonorsFromDB(campaignId) {
             alignment_score: cd.donor?.alignment_score,
             total_assets: cd.donor?.total_assets,
             annual_giving: cd.donor?.total_giving,
-            description: cd.donor?.ai_insights?.description || cd.ai_recommendation,
+            description: cd.donor?.description || cd.ai_recommendation,
             deadline: cd.donor?.deadline || 'Rolling',
             status: cd.pipeline_stage || 'Research',
             source: 'database',
