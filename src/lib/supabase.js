@@ -978,6 +978,52 @@ export async function updateCampaignCache(campaignId, donors) {
 }
 
 /**
+ * Save AI-generated insight for a donor in a campaign
+ */
+export async function saveAIInsight(campaignId, donorId, insight) {
+    console.log('💾 [Supabase] Saving AI insight for donor:', donorId);
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!campaignId || !uuidRegex.test(campaignId)) {
+        console.log('⚠️ [Supabase] Invalid campaign ID for insight save');
+        return null;
+    }
+    if (!donorId || !uuidRegex.test(donorId)) {
+        console.log('⚠️ [Supabase] Invalid donor ID for insight save');
+        return null;
+    }
+    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.log('⚠️ [Supabase] Not configured, skipping insight save');
+        return null;
+    }
+    
+    try {
+        // Save insight to campaign_donors table
+        const { error } = await supabase
+            .from('campaign_donors')
+            .update({
+                ai_recommendation: insight.summary || null,
+                approach_strategy: insight.approachStrategy || null,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('campaign_id', campaignId)
+            .eq('donor_id', donorId);
+        
+        if (error) {
+            console.warn('⚠️ [Supabase] Insight save failed:', error.message || error.code);
+            return null;
+        }
+        
+        console.log('✅ [Supabase] Saved AI insight for donor:', donorId);
+        return true;
+    } catch (error) {
+        console.warn('⚠️ [Supabase] saveAIInsight failed:', error.message);
+        return null;
+    }
+}
+
+/**
  * Update campaign last activity timestamp
  */
 export async function touchCampaignActivity(campaignId) {

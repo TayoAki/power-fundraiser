@@ -35,11 +35,19 @@ Return a JSON object with this schema:
 }`;
 
 export async function POST(request) {
-    console.log('🧠 [API/donor-insight] Generating strategy insight...');
+    const requestId = Math.random().toString(36).substring(7);
+    console.log('========================================');
+    console.log(`🧠 [API/donor-insight] REQUEST ${requestId} - Starting insight generation`);
+    console.log('========================================');
     
     try {
         const body = await request.json();
-        const { donor, organization } = body;
+        const { donor, organization, campaignId } = body;
+        
+        console.log(`📋 [API/donor-insight] ${requestId} | Donor: ${donor?.name}`);
+        console.log(`📋 [API/donor-insight] ${requestId} | Donor ID: ${donor?.id}`);
+        console.log(`📋 [API/donor-insight] ${requestId} | Campaign ID: ${campaignId || 'none'}`);
+        console.log(`📋 [API/donor-insight] ${requestId} | Organization: ${organization?.name || 'unknown'}`);
 
         if (!donor || !donor.name) {
             return NextResponse.json(
@@ -92,7 +100,7 @@ Provide actionable, specific recommendations based on the donor's giving pattern
             { role: 'user', content: userPrompt }
         ];
 
-        console.log('🤖 [API/donor-insight] Calling Gemini...');
+        console.log(`🤖 [API/donor-insight] ${requestId} | Calling Gemini LLM...`);
         const startTime = Date.now();
         
         const insight = await generateJSON(messages, {
@@ -101,17 +109,22 @@ Provide actionable, specific recommendations based on the donor's giving pattern
         });
 
         const elapsed = Date.now() - startTime;
-        console.log('✅ [API/donor-insight] Generated insight in', elapsed, 'ms');
+        console.log(`✅ [API/donor-insight] ${requestId} | Generated insight in ${elapsed}ms`);
+        console.log(`✅ [API/donor-insight] ${requestId} | Summary: ${insight?.summary?.substring(0, 80)}...`);
+        console.log(`✅ [API/donor-insight] ${requestId} | Opportunities: ${insight?.keyOpportunities?.length || 0}`);
+        console.log(`✅ [API/donor-insight] ${requestId} | Website found: ${insight?.websiteUrl ? 'yes' : 'no'}`);
 
         return NextResponse.json({
             success: true,
             insight: insight,
             donorId: donor.id,
+            campaignId: campaignId,
             elapsed_ms: elapsed,
+            requestId: requestId,
         });
 
     } catch (error) {
-        console.error('❌ [API/donor-insight] Error:', error.message);
+        console.error(`❌ [API/donor-insight] ${requestId} | ERROR:`, error.message);
         
         // Return a fallback insight
         return NextResponse.json({

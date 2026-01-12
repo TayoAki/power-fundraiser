@@ -17,7 +17,7 @@ import {
 } from '@/lib/mockData';
 import { donorResearchAPI } from '@/lib/api';
 import { getDailySearchUsage, canPerformSearch, incrementSearchCount } from '@/lib/openrouter';
-import { saveAIDonorResults, loadCampaignDonorsFromDB, createCampaignInDB, loadCampaignsFromDB, updateCampaignCache, touchCampaignActivity } from '@/lib/supabase';
+import { saveAIDonorResults, loadCampaignDonorsFromDB, createCampaignInDB, loadCampaignsFromDB, updateCampaignCache, touchCampaignActivity, saveAIInsight } from '@/lib/supabase';
 
 // Utility functions
 function formatCurrency(amount) {
@@ -29,7 +29,7 @@ function formatCurrency(amount) {
 }
 
 // Donor Card Component
-function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline, onReject, isRejected, organization }) {
+function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline, onReject, isRejected, organization, campaignId }) {
     const [activeTab, setActiveTab] = useState('insight');
     const [generatedInsight, setGeneratedInsight] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -61,6 +61,15 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
     const generateInsight = async () => {
         if (isGenerating) return;
         setIsGenerating(true);
+        
+        const startTime = Date.now();
+        console.log('========================================');
+        console.log('🧠 [DonorCard] INSIGHT GENERATION STARTED');
+        console.log('========================================');
+        console.log('🧠 [DonorCard] Donor:', donor.name);
+        console.log('🧠 [DonorCard] Donor ID:', donor.id);
+        console.log('🧠 [DonorCard] Campaign ID:', campaignId || 'none');
+        
         try {
             // Pass comprehensive donor data to improve LLM results
             const donorData = {
@@ -68,22 +77,43 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                 recent_grants: donor.grants || donor.recent_grants,
                 officers: donor.officers,
             };
-            console.log('🧠 [DonorCard] Generating insight with data:', donorData.name, '| officers:', donorData.officers?.length, '| grants:', donorData.recent_grants?.length);
+            console.log('🧠 [DonorCard] Data: officers:', donorData.officers?.length || 0, '| grants:', donorData.recent_grants?.length || 0);
             
             const response = await fetch('/api/ai/donor-insight', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ donor: donorData, organization }),
+                body: JSON.stringify({ donor: donorData, organization, campaignId }),
             });
             const result = await response.json();
-            console.log('🧠 [DonorCard] Insight result:', result.success, result.insight);
+            const elapsed = Date.now() - startTime;
+            
+            console.log('🧠 [DonorCard] Response received in', elapsed, 'ms');
+            console.log('🧠 [DonorCard] Success:', result.success);
+            console.log('🧠 [DonorCard] Request ID:', result.requestId);
+            
             if (result.success && result.insight) {
                 setGeneratedInsight(result.insight);
+                console.log('✅ [DonorCard] Insight set to state');
+                console.log('✅ [DonorCard] Summary:', result.insight.summary?.substring(0, 60) + '...');
+                
+                // Save insight to database
+                if (campaignId && donor.id) {
+                    console.log('💾 [DonorCard] Saving insight to database...');
+                    const saved = await saveAIInsight(campaignId, donor.id, result.insight);
+                    if (saved) {
+                        console.log('✅ [DonorCard] Insight saved to database');
+                    } else {
+                        console.log('⚠️ [DonorCard] Insight not saved (no campaign_donors entry or schema issue)');
+                    }
+                } else {
+                    console.log('⚠️ [DonorCard] Skipping DB save - missing campaignId or donorId');
+                }
             }
         } catch (error) {
-            console.error('Failed to generate insight:', error);
+            console.error('❌ [DonorCard] Failed to generate insight:', error);
         }
         setIsGenerating(false);
+        console.log('========================================');
     };
 
     // Auto-trigger AI insight when card is expanded
@@ -2221,6 +2251,7 @@ export default function DonorResearchPage() {
                                     onReject={handleReject}
                                     isRejected={rejectedIds.has(donor.id)}
                                     organization={searchConfig}
+                                    campaignId={currentCampaign?.id}
                                 />
                             ))
                         )}
