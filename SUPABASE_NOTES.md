@@ -79,5 +79,34 @@ ALTER TABLE donors ADD COLUMN IF NOT EXISTS grants JSONB DEFAULT '[]';
 
 ---
 
+---
+
+## ⚠️ CRITICAL LESSON LEARNED
+
+### Migration Files ≠ Live Database
+
+**Problem:** We tried to run `ALTER TABLE campaigns ADD COLUMN...` but got:
+```
+Error: relation "campaigns" does not exist
+```
+
+**Root Cause:** 
+- Migration files in `/supabase/migrations/` are **NOT automatically applied**
+- They represent the **DESIRED** schema, not the **ACTUAL** database state
+- The `campaigns` table was defined in `00001_create_base_tables.sql` but never created
+
+**Rule:** Before writing migrations that ALTER or reference a table:
+1. **Check if the table exists** in Supabase Dashboard → Table Editor
+2. If table doesn't exist, **CREATE it first** before adding columns
+3. Never assume migration files have been run
+
+**How to check what exists:**
+```sql
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+```
+
+---
+
 ## Last Updated
+- Jan 12, 2026 - Added lesson learned about migration order
 - Jan 12, 2026 - Created notes, identified schema mismatch
