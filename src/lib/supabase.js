@@ -818,12 +818,12 @@ export async function loadCampaignDonorsFromDB(campaignId) {
             website: cd.donor?.website,
             focus_areas: cd.donor?.focus_areas,
             funding_range: cd.donor?.funding_range,
-            alignment_score: cd.donor?.alignment_score,
+            alignment_score: cd.alignment_score || cd.donor?.alignment_score, // alignment_score is in campaign_donors
             total_assets: cd.donor?.total_assets,
             annual_giving: cd.donor?.total_giving,
             description: cd.donor?.description || cd.ai_recommendation,
             deadline: cd.donor?.deadline || 'Rolling',
-            status: cd.pipeline_stage || 'Research',
+            status: cd.stage || cd.pipeline_stage || 'Research',
             source: 'database',
         })).filter(d => d.id && d.name); // Filter out any invalid entries
         

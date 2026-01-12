@@ -1,6 +1,15 @@
 // Mock Data Service for Power Fundraiser
 // Contains seed foundations and contacts that are shared across all campaigns
 
+// Generate a proper UUID v4
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 export const MOCK_FOUNDATIONS = [
     {
         id: 'f1',
@@ -456,9 +465,12 @@ export function createCampaign(name, config = {}) {
         return existingCampaign;
     }
     
-    console.log('📋 [mockData] Creating NEW campaign:', name);
+    // Generate proper UUID for Supabase compatibility
+    const campaignId = generateUUID();
+    console.log('📋 [mockData] Creating NEW campaign:', name, '| UUID:', campaignId);
+    
     const campaign = {
-        id: `campaign-${Date.now()}`,
+        id: campaignId,
         name,
         createdAt: new Date().toISOString(),
         status: 'active',
