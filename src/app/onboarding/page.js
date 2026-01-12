@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { saveOrganizationToDB } from '@/lib/supabase';
 
 export default function OnboardingPage() {
     const router = useRouter();
@@ -41,10 +42,10 @@ export default function OnboardingPage() {
         }
     };
 
-    const handleComplete = () => {
+    const handleComplete = async () => {
         setIsLoading(true);
         
-        // Save settings
+        // Save to localStorage (fallback)
         localStorage.setItem('hasOnboarded', 'true');
         localStorage.setItem('orgSettings', JSON.stringify(orgSettings));
         localStorage.setItem('socialSettings', JSON.stringify(socialSettings));
@@ -52,6 +53,19 @@ export default function OnboardingPage() {
             name: orgSettings.name,
             mission: orgSettings.mission,
         }));
+        
+        // Save to database (primary)
+        const userId = sessionStorage.getItem('userId');
+        const savedOrg = await saveOrganizationToDB({
+            ...orgSettings,
+            linkedin: socialSettings.linkedin,
+            twitter: socialSettings.twitter,
+        }, userId);
+        
+        if (savedOrg?.id) {
+            localStorage.setItem('organizationId', savedOrg.id);
+            console.log('✅ [Onboarding] Organization saved to database:', savedOrg.id);
+        }
         
         // Redirect to dashboard
         setTimeout(() => {

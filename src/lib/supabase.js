@@ -523,6 +523,151 @@ export async function signOut() {
 }
 
 // ============================================================================
+// ORGANIZATION SETTINGS
+// ============================================================================
+
+/**
+ * Save organization settings to the database
+ */
+export async function saveOrganizationToDB(orgData, userId) {
+    console.log('💾 [Supabase] Saving organization:', orgData.name);
+    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.log('⚠️ [Supabase] Not configured, skipping org save');
+        return null;
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('organizations')
+            .insert({
+                name: orgData.name,
+                mission: orgData.mission || null,
+                vision: orgData.vision || null,
+                website: orgData.website || null,
+                zip_code: orgData.zipCode || null,
+                linkedin_url: orgData.linkedin || null,
+                twitter_url: orgData.twitter || null,
+            })
+            .select()
+            .single();
+        
+        if (error) {
+            console.error('❌ [Supabase] Error saving organization:', error.message);
+            return null;
+        }
+        
+        console.log('✅ [Supabase] Organization saved with ID:', data.id);
+        
+        // Store org ID in localStorage for future reference
+        localStorage.setItem('organizationId', data.id);
+        
+        return data;
+    } catch (error) {
+        console.error('❌ [Supabase] saveOrganizationToDB failed:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Load organization settings from the database
+ */
+export async function loadOrganizationFromDB(orgId) {
+    console.log('📥 [Supabase] Loading organization:', orgId);
+    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.log('⚠️ [Supabase] Not configured, skipping org load');
+        return null;
+    }
+    
+    // Validate UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!orgId || !uuidRegex.test(orgId)) {
+        console.log('⚠️ [Supabase] Invalid org ID, skipping load');
+        return null;
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('id', orgId)
+            .single();
+        
+        if (error) {
+            console.warn('⚠️ [Supabase] Error loading organization:', error.message);
+            return null;
+        }
+        
+        // Transform to match expected format
+        const org = {
+            id: data.id,
+            name: data.name,
+            mission: data.mission,
+            vision: data.vision,
+            website: data.website,
+            zipCode: data.zip_code,
+            linkedin: data.linkedin_url,
+            twitter: data.twitter_url,
+        };
+        
+        console.log('✅ [Supabase] Loaded organization:', org.name);
+        return org;
+    } catch (error) {
+        console.warn('⚠️ [Supabase] loadOrganizationFromDB failed:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Update organization settings in the database
+ */
+export async function updateOrganizationInDB(orgId, updates) {
+    console.log('📝 [Supabase] Updating organization:', orgId);
+    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.log('⚠️ [Supabase] Not configured, skipping org update');
+        return null;
+    }
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!orgId || !uuidRegex.test(orgId)) {
+        console.log('⚠️ [Supabase] Invalid org ID, skipping update');
+        return null;
+    }
+    
+    try {
+        const dbUpdates = {};
+        if (updates.name !== undefined) dbUpdates.name = updates.name;
+        if (updates.mission !== undefined) dbUpdates.mission = updates.mission;
+        if (updates.vision !== undefined) dbUpdates.vision = updates.vision;
+        if (updates.website !== undefined) dbUpdates.website = updates.website;
+        if (updates.zipCode !== undefined) dbUpdates.zip_code = updates.zipCode;
+        if (updates.linkedin !== undefined) dbUpdates.linkedin_url = updates.linkedin;
+        if (updates.twitter !== undefined) dbUpdates.twitter_url = updates.twitter;
+        dbUpdates.updated_at = new Date().toISOString();
+        
+        const { data, error } = await supabase
+            .from('organizations')
+            .update(dbUpdates)
+            .eq('id', orgId)
+            .select()
+            .single();
+        
+        if (error) {
+            console.error('❌ [Supabase] Error updating organization:', error.message);
+            return null;
+        }
+        
+        console.log('✅ [Supabase] Organization updated');
+        return data;
+    } catch (error) {
+        console.error('❌ [Supabase] updateOrganizationInDB failed:', error.message);
+        return null;
+    }
+}
+
+// ============================================================================
 // AI DONOR SEARCH RESULTS STORAGE
 // ============================================================================
 

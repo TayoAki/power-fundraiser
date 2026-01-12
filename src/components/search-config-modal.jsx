@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { loadOrganizationFromDB } from "@/lib/supabase";
 
 const REGIONS = [
     "All Regions",
@@ -102,26 +103,47 @@ export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
     const [loadingStage, setLoadingStage] = React.useState(0);
     const [animatingStep, setAnimatingStep] = React.useState(0);
 
-    // Load organization settings from localStorage when modal opens
+    // Load organization settings from database (primary) or localStorage (fallback) when modal opens
     React.useEffect(() => {
         if (!open) return;
         
-        // Load org settings from onboarding
-        const storedOrgSettings = localStorage.getItem('orgSettings');
-        if (storedOrgSettings) {
-            try {
-                const orgSettings = JSON.parse(storedOrgSettings);
-                console.log('📋 [Modal] Loaded org settings:', orgSettings);
-                setFormData(prev => ({
-                    ...prev,
-                    organizationName: orgSettings.name || prev.organizationName,
-                    organizationMission: orgSettings.mission || prev.organizationMission,
-                    zipCode: orgSettings.zipCode || prev.zipCode,
-                }));
-            } catch (e) {
-                console.warn('Failed to parse org settings:', e);
+        const loadOrgSettings = async () => {
+            // Try database first
+            const orgId = localStorage.getItem('organizationId');
+            if (orgId) {
+                console.log('📋 [Modal] Loading org from database...');
+                const dbOrg = await loadOrganizationFromDB(orgId);
+                if (dbOrg) {
+                    console.log('✅ [Modal] Loaded org from database:', dbOrg.name);
+                    setFormData(prev => ({
+                        ...prev,
+                        organizationName: dbOrg.name || prev.organizationName,
+                        organizationMission: dbOrg.mission || prev.organizationMission,
+                        zipCode: dbOrg.zipCode || prev.zipCode,
+                    }));
+                    return;
+                }
             }
-        }
+            
+            // Fallback to localStorage
+            const storedOrgSettings = localStorage.getItem('orgSettings');
+            if (storedOrgSettings) {
+                try {
+                    const orgSettings = JSON.parse(storedOrgSettings);
+                    console.log('📋 [Modal] Loaded org from localStorage:', orgSettings.name);
+                    setFormData(prev => ({
+                        ...prev,
+                        organizationName: orgSettings.name || prev.organizationName,
+                        organizationMission: orgSettings.mission || prev.organizationMission,
+                        zipCode: orgSettings.zipCode || prev.zipCode,
+                    }));
+                } catch (e) {
+                    console.warn('Failed to parse org settings:', e);
+                }
+            }
+        };
+        
+        loadOrgSettings();
     }, [open]);
 
     // Looping animation for the progress steps while user fills form
