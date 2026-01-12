@@ -17,7 +17,7 @@ import {
 } from '@/lib/mockData';
 import { donorResearchAPI } from '@/lib/api';
 import { getDailySearchUsage, canPerformSearch, incrementSearchCount } from '@/lib/openrouter';
-import { saveAIDonorResults, loadCampaignDonorsFromDB, createCampaignInDB, loadCampaignsFromDB } from '@/lib/supabase';
+import { saveAIDonorResults, loadCampaignDonorsFromDB, createCampaignInDB, loadCampaignsFromDB, updateCampaignCache, touchCampaignActivity } from '@/lib/supabase';
 
 // Utility functions
 function formatCurrency(amount) {
@@ -796,10 +796,28 @@ export default function DonorResearchPage() {
 
     // Load campaigns on mount - foundations only shown after user searches
     useEffect(() => {
-        console.log('🔄 [Research] Initializing page...');
-        const campaigns = getCampaigns();
-        console.log('📋 [Research] Loaded campaigns:', campaigns.length, campaigns.map(c => c.name));
-        setAvailableCampaigns(campaigns);
+        const initializePage = async () => {
+            console.log('🔄 [Research] Initializing page...');
+            
+            // Try to load campaigns from Supabase first
+            let campaigns = [];
+            try {
+                const dbCampaigns = await loadCampaignsFromDB();
+                if (dbCampaigns && dbCampaigns.length > 0) {
+                    console.log('📋 [Research] Loaded campaigns from Supabase:', dbCampaigns.length);
+                    campaigns = dbCampaigns;
+                }
+            } catch (err) {
+                console.warn('⚠️ [Research] Supabase load failed, falling back to localStorage');
+            }
+            
+            // Fall back to localStorage if no Supabase campaigns
+            if (campaigns.length === 0) {
+                campaigns = getCampaigns();
+                console.log('📋 [Research] Loaded campaigns from localStorage:', campaigns.length);
+            }
+            
+            setAvailableCampaigns(campaigns);
         
         // Check if we have a previously active campaign with search results
         const active = getActiveCampaign();
@@ -893,20 +911,33 @@ export default function DonorResearchPage() {
             loadCampaignDonors();
         }
         // Otherwise, user starts fresh and must perform a search
+        };
+        
+        initializePage();
     }, []);
 
     // When campaign changes, load that campaign's results
     const handleCampaignChange = async (newCampaignId) => {
-        const campaign = getCampaignById(newCampaignId);
+        // Try to find campaign in availableCampaigns first (includes Supabase campaigns)
+        let campaign = availableCampaigns.find(c => c.id === newCampaignId);
+        
+        // Fall back to localStorage
+        if (!campaign) {
+            campaign = getCampaignById(newCampaignId);
+        }
+        
         if (campaign) {
             setCurrentCampaign(campaign);
             setCampaignName(campaign.name);
             setActiveCampaign(campaign.id);
             
+            // Update last activity in Supabase
+            touchCampaignActivity(newCampaignId);
+            
             // Build pipeline and rejected sets from campaign data
             const pipelineSet = new Set();
             const rejectedSet = new Set();
-            campaign.donors.forEach(d => {
+            (campaign.donors || []).forEach(d => {
                 if (d.isRejected) {
                     rejectedSet.add(d.foundationId);
                 } else {
@@ -916,17 +947,36 @@ export default function DonorResearchPage() {
             setPipelineIds(pipelineSet);
             setRejectedIds(rejectedSet);
             
-            // Check cache first for instant load
+            // 1. Check if campaign has cached donors from Supabase
+            if (campaign.cachedDonors && campaign.cachedDonors.length > 0) {
+                console.log('⚡ [Research] Using Supabase cached donors!');
+                setDonors(campaign.cachedDonors);
+                setExpandedId(campaign.cachedDonors[0].id);
+                setHasSearched(true);
+                return;
+            }
+            
+            // 2. Try to load from Supabase campaign_donors table
+            const dbDonors = await loadCampaignDonorsFromDB(newCampaignId);
+            if (dbDonors && dbDonors.length > 0) {
+                console.log('⚡ [Research] Loaded donors from Supabase DB!');
+                setDonors(dbDonors);
+                setExpandedId(dbDonors[0].id);
+                setHasSearched(true);
+                return;
+            }
+            
+            // 3. Check localStorage cache
             const cached = getCachedDonors(newCampaignId);
             if (cached && cached.length > 0) {
-                console.log('⚡ [Research] Switching campaign - using cache!');
+                console.log('⚡ [Research] Switching campaign - using localStorage cache!');
                 setDonors(cached);
                 setExpandedId(cached[0].id);
                 setHasSearched(true);
-                return; // No loading needed
+                return;
             }
             
-            // No cache - fetch from AI API
+            // 4. No cache anywhere - fetch from AI API
             setLoading(true);
             try {
                 const config = campaign.searchConfig || {};
@@ -948,8 +998,9 @@ export default function DonorResearchPage() {
                 if (result.success && result.donors && result.donors.length > 0) {
                     setDonors(result.donors);
                     setExpandedId(result.donors[0].id);
-                    // Cache for future visits
+                    // Cache for future visits (both localStorage and Supabase)
                     cacheDonorsForCampaign(newCampaignId, result.donors);
+                    updateCampaignCache(newCampaignId, result.donors);
                 } else {
                     setDonors(MOCK_FOUNDATIONS);
                     if (MOCK_FOUNDATIONS.length > 0) setExpandedId(MOCK_FOUNDATIONS[0].id);
@@ -1170,8 +1221,10 @@ export default function DonorResearchPage() {
                 saveAIDonorResults(campaign.id, result.donors, userId).catch(err => 
                     console.error('💾 [Research] Failed to save to DB:', err)
                 );
-                // Also cache locally for fast reload
+                // Cache locally for fast reload
                 cacheDonorsForCampaign(campaign.id, result.donors);
+                // Also cache in Supabase campaigns table for cross-device sync
+                updateCampaignCache(campaign.id, result.donors);
                 console.log('💾 [Research] Cached donors for campaign:', campaign.id);
             } else {
                 console.log('⚠️ [Research] No AI results, falling back to MOCK_FOUNDATIONS');
@@ -1670,7 +1723,11 @@ export default function DonorResearchPage() {
                                                     }}>{campaign.donors?.filter(d => d.stage !== 'research' && !d.isRejected).length || 0}</span>
                                                 </td>
                                                 <td style={{ padding: '16px', fontSize: '0.8125rem', color: '#94a3b8' }}>
-                                                    {campaign.createdAt ? new Date(campaign.createdAt).toLocaleDateString() : 'Recently'}
+                                                    {campaign.lastActivityAt 
+                                                        ? new Date(campaign.lastActivityAt).toLocaleDateString() 
+                                                        : campaign.createdAt 
+                                                            ? new Date(campaign.createdAt).toLocaleDateString() 
+                                                            : 'Recently'}
                                                 </td>
                                                 <td style={{ padding: '16px' }}>
                                                     <span style={{

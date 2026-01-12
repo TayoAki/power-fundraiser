@@ -873,6 +873,12 @@ export async function createCampaignInDB(name, searchConfig, userId, orgId) {
 export async function loadCampaignsFromDB(orgId, userId) {
     console.log('📋 [Supabase] Loading campaigns...');
     
+    // Check if Supabase is configured
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.log('⚠️ [Supabase] Not configured, skipping DB lookup');
+        return [];
+    }
+    
     try {
         let query = supabase
             .from('campaigns')
@@ -880,7 +886,7 @@ export async function loadCampaignsFromDB(orgId, userId) {
                 *,
                 campaign_donors (count)
             `)
-            .order('created_at', { ascending: false });
+            .order('last_activity_at', { ascending: false, nullsFirst: false });
         
         // Filter by org or user if provided
         if (orgId) {
@@ -903,7 +909,10 @@ export async function loadCampaignsFromDB(orgId, userId) {
             status: c.status,
             searchConfig: c.search_config,
             createdAt: c.created_at,
+            lastActivityAt: c.last_activity_at || c.updated_at || c.created_at,
+            cachedDonors: c.cached_donors || [],
             donorCount: c.campaign_donors?.[0]?.count || 0,
+            donors: [], // Will be populated when campaign is selected
         }));
         
         console.log('✅ [Supabase] Loaded', campaigns.length, 'campaigns');
@@ -911,6 +920,70 @@ export async function loadCampaignsFromDB(orgId, userId) {
     } catch (error) {
         console.error('❌ [Supabase] loadCampaignsFromDB failed:', error);
         return [];
+    }
+}
+
+/**
+ * Update campaign's cached donors and last activity
+ */
+export async function updateCampaignCache(campaignId, donors) {
+    console.log('💾 [Supabase] Caching donors for campaign:', campaignId);
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!campaignId || !uuidRegex.test(campaignId)) {
+        console.log('⚠️ [Supabase] Invalid campaign ID for caching');
+        return null;
+    }
+    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.log('⚠️ [Supabase] Not configured, skipping cache update');
+        return null;
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('campaigns')
+            .update({
+                cached_donors: donors,
+                last_activity_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', campaignId)
+            .select()
+            .single();
+        
+        if (error) {
+            console.error('❌ [Supabase] Error caching donors:', error);
+            return null;
+        }
+        
+        console.log('✅ [Supabase] Cached', donors.length, 'donors');
+        return data;
+    } catch (error) {
+        console.error('❌ [Supabase] updateCampaignCache failed:', error);
+        return null;
+    }
+}
+
+/**
+ * Update campaign last activity timestamp
+ */
+export async function touchCampaignActivity(campaignId) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!campaignId || !uuidRegex.test(campaignId)) return;
+    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+    
+    try {
+        await supabase
+            .from('campaigns')
+            .update({
+                last_activity_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', campaignId);
+    } catch (error) {
+        console.warn('⚠️ [Supabase] Failed to update campaign activity:', error);
     }
 }
 
