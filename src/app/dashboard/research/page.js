@@ -611,6 +611,7 @@ export default function DonorResearchPage() {
     const [currentCampaign, setCurrentCampaign] = useState(null);
     const [regionFilter, setRegionFilter] = useState('All Regions');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [categoryFilter, setCategoryFilter] = useState('all'); // 'all', 'foundation', 'government'
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchConfig, setSearchConfig] = useState(null);
     const [availableCampaigns, setAvailableCampaigns] = useState([]);
@@ -1078,6 +1079,17 @@ export default function DonorResearchPage() {
                 d.focus_areas?.toLowerCase().includes(term) ||
                 d.description?.toLowerCase().includes(term);
             if (!match) return false;
+        }
+
+        // Category filter (Foundation vs Government Grant)
+        if (categoryFilter === 'foundation') {
+            if (d.category === 'Government' || d.category === 'Government Grant' || d.source === 'grants.gov') {
+                return false;
+            }
+        } else if (categoryFilter === 'government') {
+            if (d.category !== 'Government' && d.category !== 'Government Grant' && d.source !== 'grants.gov') {
+                return false;
+            }
         }
 
         // Status filter from metric cards
@@ -1636,7 +1648,44 @@ export default function DonorResearchPage() {
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
-                                Filter View
+                                Category
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <select
+                                    value={categoryFilter}
+                                    onChange={(e) => setCategoryFilter(e.target.value)}
+                                    style={{
+                                        width: '180px',
+                                        padding: '12px 36px 12px 14px',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        fontSize: '0.875rem',
+                                        color: '#1e293b',
+                                        appearance: 'none',
+                                        backgroundColor: 'white',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <option value="all">All Categories ({donors.length})</option>
+                                    <option value="foundation">Foundations ({donors.filter(d => d.category !== 'Government' && d.category !== 'Government Grant').length})</option>
+                                    <option value="government">Government Grants ({donors.filter(d => d.category === 'Government' || d.category === 'Government Grant').length})</option>
+                                </select>
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="#94a3b8"
+                                    strokeWidth="2"
+                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                                >
+                                    <path d="M6 9l6 6 6-6" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                                Region
                             </label>
                             <div style={{ position: 'relative' }}>
                                 <select
