@@ -40,9 +40,21 @@ REQUIRED OUTPUT SCHEMA (each donor must have ALL fields):
   "focus_areas": "Comma-separated list of 3-5 specific focus areas",
   "website": "https://actual-website.org",
   "description": "2-3 sentences explaining why this donor aligns with the nonprofit's mission",
-  "total_assets": number or null (estimated foundation assets),
-  "annual_giving": number or null (estimated annual grantmaking),
-  "location": "City, State" format
+  "total_assets": number or null (from 990-PF Part II total assets),
+  "annual_giving": number or null (from 990-PF total grants paid),
+  "location": "City, State" format,
+  
+  // 990-PF DATA (for foundations - use null for corporate/government):
+  "ein": "XX-XXXXXXX" format or null (Employer Identification Number),
+  "fiscal_year_end": "MM/YYYY" or null,
+  "principal_officer": "Name, Title" of primary contact (from 990-PF Part VIII),
+  "officers": [
+    {
+      "name": "Full Name",
+      "title": "Title (e.g., President, Trustee, Executive Director)",
+      "compensated": true/false
+    }
+  ] // Array of 2-5 key officers/trustees from 990-PF Part VIII
 }
 
 SCORING GUIDELINES:
@@ -58,6 +70,9 @@ QUALITY REQUIREMENTS:
 - Funding ranges should be realistic for the donor type
 - Local donors should reference actual cities near the ZIP code
 - Descriptions must specifically mention how the donor connects to the nonprofit's mission
+- For foundations, include accurate 990-PF data: EIN, officers, fiscal year
+- Officer names should be realistic (use actual names for well-known foundations)
+- Principal officer is the primary contact for grant inquiries
 
 Return ONLY a valid JSON array. No other text.`;
 
