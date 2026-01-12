@@ -85,6 +85,14 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
         }
         setIsGenerating(false);
     };
+
+    // Auto-trigger AI insight when card is expanded
+    useEffect(() => {
+        if (isExpanded && !generatedInsight && !isGenerating) {
+            console.log('🤖 [DonorCard] Auto-triggering AI insight for:', donor.name);
+            generateInsight();
+        }
+    }, [isExpanded]);
     
     const tabs = [
         { id: 'insight', label: 'AI Strategy Insight' },
