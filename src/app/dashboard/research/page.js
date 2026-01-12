@@ -318,11 +318,15 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '0.6875rem', color: '#94a3b8', marginBottom: '4px' }}>Annual Giving</div>
-                                        <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>{formatCurrency(donor.total_assets * 0.05)}</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>{formatCurrency(donor.annual_giving)}</div>
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '0.6875rem', color: '#94a3b8', marginBottom: '4px' }}>Avg Grant</div>
-                                        <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>{formatCurrency(donor.total_assets * 0.002)}</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>
+                                            {donor.recent_grants?.length > 0 
+                                                ? formatCurrency(donor.recent_grants.reduce((sum, g) => sum + (g.amount || 0), 0) / donor.recent_grants.length)
+                                                : 'N/A'}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
