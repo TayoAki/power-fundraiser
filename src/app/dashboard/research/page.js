@@ -37,6 +37,11 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
     const insights = generatedInsight || donor.ai_insights || {};
     const score = donor.alignment_score || 85;
     const isHighlyActive = score >= 95;
+    
+    // Check if this is a government grant (no 990-PF data)
+    const isGovernmentGrant = donor.source === 'grants.gov' || 
+                               donor.category === 'Government' || 
+                               donor.category === 'Government Grant';
 
     // Log donor data for debugging (only on first render when expanded)
     if (isExpanded) {
@@ -71,11 +76,6 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
         }
         setIsGenerating(false);
     };
-
-    // Check if this is a government grant (no 990-PF data)
-    const isGovernmentGrant = donor.source === 'grants.gov' || 
-                               donor.category === 'Government' || 
-                               donor.category === 'Government Grant';
     
     const tabs = [
         { id: 'insight', label: 'AI Strategy Insight' },
