@@ -49,6 +49,8 @@ export default function NetworkPage() {
         
         // Extract contacts from cached donors in all campaigns
         const donorContacts = [];
+        const peopleContacts = [];
+        
         campaigns.forEach(campaign => {
             if (campaign.cachedDonors && Array.isArray(campaign.cachedDonors)) {
                 campaign.cachedDonors.forEach(donor => {
@@ -71,22 +73,49 @@ export default function NetworkPage() {
                         description: donor.description,
                         source: 'ai_search',
                         campaignName: campaign.name,
+                        donorId: donor.id,
                     });
+                    
+                    // Extract officers/people from this foundation
+                    if (donor.officers && Array.isArray(donor.officers)) {
+                        donor.officers.forEach((officer, idx) => {
+                            peopleContacts.push({
+                                id: `officer-${donor.id}-${idx}`,
+                                name: officer.name || officer.person_name || 'Unknown',
+                                title: officer.title || officer.role || 'Officer',
+                                org: donor.name,
+                                degree: '3rd', // Unknown connection until matched
+                                connection: null,
+                                matched: true,
+                                assets: donor.total_assets,
+                                focus: donor.focus_areas?.split(',')[0]?.trim() || 'General',
+                                website: donor.website,
+                                location: donor.location,
+                                category: donor.category,
+                                alignment_score: donor.alignment_score,
+                                source: 'officer_990',
+                                campaignName: campaign.name,
+                                donorId: donor.id,
+                                isPerson: true,
+                            });
+                        });
+                    }
                 });
             }
         });
         
-        console.log('🔍 [Network] Extracted', donorContacts.length, 'donors from campaigns');
+        console.log('🔍 [Network] Extracted', donorContacts.length, 'foundations from campaigns');
+        console.log('👥 [Network] Extracted', peopleContacts.length, 'people/officers from foundations');
         
         // Merge with any previously uploaded contacts
         const storedContacts = localStorage.getItem('networkContacts');
-        let allContacts = donorContacts;
+        let allContacts = [...donorContacts, ...peopleContacts];
         
         if (storedContacts) {
             const parsed = JSON.parse(storedContacts);
             // Only add uploaded contacts that aren't already in donor list
-            const uploadedContacts = parsed.filter(c => c.source !== 'ai_search');
-            allContacts = [...donorContacts, ...uploadedContacts];
+            const uploadedContacts = parsed.filter(c => c.source !== 'ai_search' && c.source !== 'officer_990');
+            allContacts = [...donorContacts, ...peopleContacts, ...uploadedContacts];
         }
         
         if (allContacts.length > 0) {
