@@ -687,7 +687,7 @@ export default function DonorResearchPage() {
                             organizationName: config.organizationName || config.campaignName || active.name,
                             mission: config.organizationMission || config.causeAreas?.join(', ') || '',
                             zipCode: config.zipCode || config.targetRegion || '',
-                            focusAreas: config.causeAreas?.join(', ') || '',
+                            focusAreas: config.causeAreas?.join(', ') || config.strategicGoals || config.organizationMission || '',
                             donorCount: 50,
                         }),
                     });
@@ -765,7 +765,7 @@ export default function DonorResearchPage() {
                         organizationName: config.organizationName || config.campaignName || campaign.name,
                         mission: config.organizationMission || config.causeAreas?.join(', ') || '',
                         zipCode: config.zipCode || config.targetRegion || '',
-                        focusAreas: config.causeAreas?.join(', ') || '',
+                        focusAreas: config.causeAreas?.join(', ') || config.strategicGoals || config.organizationMission || '',
                         donorCount: 50,
                     }),
                 });
@@ -824,7 +824,7 @@ export default function DonorResearchPage() {
                     organizationName: orgData.name || campaignName,
                     mission: orgData.mission || searchConfig?.organizationMission || searchQuery,
                     zipCode: searchConfig?.zipCode || '',
-                    focusAreas: searchConfig?.causeAreas?.join(', ') || searchQuery,
+                    focusAreas: searchConfig?.causeAreas?.join(', ') || searchConfig?.strategicGoals || searchConfig?.organizationMission || searchQuery,
                     donorCount: 50,
                 }),
             });
@@ -929,7 +929,7 @@ export default function DonorResearchPage() {
                 organizationName: config.organizationName || config.campaignName,
                 mission: config.organizationMission || config.causeAreas?.join(', ') || '',
                 zipCode: config.zipCode || config.targetRegion || '',
-                focusAreas: config.causeAreas?.join(', ') || '',
+                focusAreas: config.causeAreas?.join(', ') || config.strategicGoals || config.organizationMission || '',
                 donorCount: 50,
             };
             console.log('🤖 [Research] Params:', JSON.stringify(apiParams, null, 2));
