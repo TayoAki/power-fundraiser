@@ -789,6 +789,7 @@ export default function DonorResearchPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchConfig, setSearchConfig] = useState(null);
     const [availableCampaigns, setAvailableCampaigns] = useState([]);
+    const [showAllCampaigns, setShowAllCampaigns] = useState(false);
     
     // Ref to prevent duplicate search calls
     const isSearchingRef = useRef(false);
@@ -1659,20 +1660,34 @@ export default function DonorResearchPage() {
                                         <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>Continue where you left off</p>
                                     </div>
                                 </div>
-                                <button style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '8px 14px',
-                                    background: 'transparent',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    fontSize: '0.8125rem',
-                                    color: '#64748b',
-                                    cursor: 'pointer',
-                                }}>
-                                    View All
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <button 
+                                    onClick={() => setShowAllCampaigns(!showAllCampaigns)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '8px 14px',
+                                        background: showAllCampaigns ? '#f1f5f9' : 'transparent',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        fontSize: '0.8125rem',
+                                        color: '#64748b',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                    }}>
+                                    {showAllCampaigns ? 'Show Less' : 'View All'}
+                                    <svg 
+                                        width="14" 
+                                        height="14" 
+                                        viewBox="0 0 24 24" 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        strokeWidth="2"
+                                        style={{ 
+                                            transform: showAllCampaigns ? 'rotate(90deg)' : 'rotate(0deg)',
+                                            transition: 'transform 0.2s',
+                                        }}
+                                    >
                                         <path d="M9 18l6-6-6-6" />
                                     </svg>
                                 </button>
@@ -1698,7 +1713,7 @@ export default function DonorResearchPage() {
                                                     No campaigns yet. Start a new search to create your first campaign.
                                                 </td>
                                             </tr>
-                                        ) : availableCampaigns.slice(0, 5).map((campaign) => (
+                                        ) : (showAllCampaigns ? availableCampaigns : availableCampaigns.slice(0, 5)).map((campaign) => (
                                             <tr key={campaign.id} style={{ borderTop: '1px solid #f1f5f9' }}>
                                                 <td style={{ padding: '16px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
