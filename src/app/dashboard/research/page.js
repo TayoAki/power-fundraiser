@@ -746,15 +746,13 @@ export default function DonorResearchPage() {
             return;
         }
         
-        // Prevent duplicate calls using ref (more reliable than state)
-        const searchKey = config.campaignName + '-' + config.causeAreas?.join(',');
-        if (isSearchingRef.current || lastSearchRef.current === searchKey) {
-            console.log('⛔ [Research] BLOCKED - Duplicate search detected, skipping');
+        // Prevent concurrent searches (but allow same campaign names)
+        if (isSearchingRef.current) {
+            console.log('⛔ [Research] BLOCKED - Search already in progress');
             return;
         }
         
         isSearchingRef.current = true;
-        lastSearchRef.current = searchKey;
         
         // Increment search count
         const searchResult = incrementSearchCount();
@@ -844,11 +842,6 @@ export default function DonorResearchPage() {
         setRejectedIds(new Set());
         setLoading(false);
         isSearchingRef.current = false; // Reset ref to allow new searches
-        // Don't reset lastSearchRef here - it prevents immediate re-clicks
-        // But DO reset it after a delay to allow new different searches
-        setTimeout(() => {
-            lastSearchRef.current = null;
-        }, 2000);
         console.log('========================================');
         console.log('🏁 [Research] SEARCH COMPLETE');
         console.log('========================================');
