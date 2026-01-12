@@ -17,6 +17,7 @@ import {
 } from '@/lib/mockData';
 import { donorResearchAPI } from '@/lib/api';
 import { getDailySearchUsage, canPerformSearch, incrementSearchCount } from '@/lib/openrouter';
+import { saveAIDonorResults, loadCampaignDonorsFromDB, createCampaignInDB, loadCampaignsFromDB } from '@/lib/supabase';
 
 // Utility functions
 function formatCurrency(amount) {
@@ -505,55 +506,74 @@ export default function DonorResearchPage() {
             setPipelineIds(pipelineSet);
             setRejectedIds(rejectedSet);
             
-            // Check for cached donors first (instant load)
-            const cached = getCachedDonors(active.id);
-            if (cached && cached.length > 0) {
-                console.log('⚡ [Research] Using cached donors - instant load!');
-                setDonors(cached);
-                setExpandedId(cached[0].id);
-                setLoading(false);
-            } else {
-                // No cache - fetch from AI API
-                const loadCampaignDonors = async () => {
-                    console.log('🔍 [Research] No cache found, calling AI...');
-                    setLoading(true);
-                    try {
-                        const config = active.searchConfig || {};
-                        console.log('📤 [Research] API request config:', config);
-                        
-                        const response = await fetch('/api/ai/donor-search', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                organizationName: config.organizationName || config.campaignName || active.name,
-                                mission: config.organizationMission || config.causeAreas?.join(', ') || '',
-                                zipCode: config.zipCode || config.targetRegion || '',
-                                focusAreas: config.causeAreas?.join(', ') || '',
-                                donorCount: 50,
-                            }),
-                        });
-                        const result = await response.json();
-                        
-                        console.log('📥 [Research] API response:', { success: result.success, donorCount: result.donors?.length });
-                        if (result.success && result.donors && result.donors.length > 0) {
-                            setDonors(result.donors);
-                            setExpandedId(result.donors[0].id);
-                            // Cache for future visits
-                            cacheDonorsForCampaign(active.id, result.donors);
-                        } else {
-                            console.log('⚠️ [Research] No donors returned, using mock data');
-                            setDonors(MOCK_FOUNDATIONS);
-                            if (MOCK_FOUNDATIONS.length > 0) setExpandedId(MOCK_FOUNDATIONS[0].id);
-                        }
-                    } catch (error) {
-                        console.error('❌ [Research] Error loading campaign donors:', error);
+            // Try to load from database first, then cache, then AI
+            const loadCampaignDonors = async () => {
+                setLoading(true);
+                
+                // 1. Try database first
+                console.log('🔍 [Research] Checking database for donors...');
+                const dbDonors = await loadCampaignDonorsFromDB(active.id);
+                if (dbDonors && dbDonors.length > 0) {
+                    console.log('⚡ [Research] Loaded', dbDonors.length, 'donors from database!');
+                    setDonors(dbDonors);
+                    setExpandedId(dbDonors[0].id);
+                    setLoading(false);
+                    return;
+                }
+                
+                // 2. Try localStorage cache
+                const cached = getCachedDonors(active.id);
+                if (cached && cached.length > 0) {
+                    console.log('⚡ [Research] Using cached donors - instant load!');
+                    setDonors(cached);
+                    setExpandedId(cached[0].id);
+                    setLoading(false);
+                    return;
+                }
+                
+                // 3. No data found - need to call AI
+                console.log('🔍 [Research] No saved donors found, calling AI...');
+                try {
+                    const config = active.searchConfig || {};
+                    console.log('📤 [Research] API request config:', config);
+                    
+                    const response = await fetch('/api/ai/donor-search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            organizationName: config.organizationName || config.campaignName || active.name,
+                            mission: config.organizationMission || config.causeAreas?.join(', ') || '',
+                            zipCode: config.zipCode || config.targetRegion || '',
+                            focusAreas: config.causeAreas?.join(', ') || '',
+                            donorCount: 50,
+                        }),
+                    });
+                    const result = await response.json();
+                    
+                    console.log('📥 [Research] API response:', { success: result.success, donorCount: result.donors?.length });
+                    if (result.success && result.donors && result.donors.length > 0) {
+                        setDonors(result.donors);
+                        setExpandedId(result.donors[0].id);
+                        // Save to database for persistence
+                        const userId = sessionStorage.getItem('userId');
+                        saveAIDonorResults(active.id, result.donors, userId).catch(err => 
+                            console.error('Failed to save to DB:', err)
+                        );
+                        // Also cache locally for fast reload
+                        cacheDonorsForCampaign(active.id, result.donors);
+                    } else {
+                        console.log('⚠️ [Research] No donors returned, using mock data');
                         setDonors(MOCK_FOUNDATIONS);
                         if (MOCK_FOUNDATIONS.length > 0) setExpandedId(MOCK_FOUNDATIONS[0].id);
                     }
-                    setLoading(false);
-                };
-                loadCampaignDonors();
-            }
+                } catch (error) {
+                    console.error('❌ [Research] Error loading campaign donors:', error);
+                    setDonors(MOCK_FOUNDATIONS);
+                    if (MOCK_FOUNDATIONS.length > 0) setExpandedId(MOCK_FOUNDATIONS[0].id);
+                }
+                setLoading(false);
+            };
+            loadCampaignDonors();
         }
         // Otherwise, user starts fresh and must perform a search
     }, []);
@@ -791,7 +811,12 @@ export default function DonorResearchPage() {
                 console.log('✅ [Research] First donor:', result.donors[0]?.name);
                 setDonors(result.donors);
                 setExpandedId(result.donors[0].id);
-                // Cache donors for instant loading on future visits
+                // Save to database for persistence across devices
+                const userId = sessionStorage.getItem('userId');
+                saveAIDonorResults(campaign.id, result.donors, userId).catch(err => 
+                    console.error('💾 [Research] Failed to save to DB:', err)
+                );
+                // Also cache locally for fast reload
                 cacheDonorsForCampaign(campaign.id, result.donors);
                 console.log('💾 [Research] Cached donors for campaign:', campaign.id);
             } else {
