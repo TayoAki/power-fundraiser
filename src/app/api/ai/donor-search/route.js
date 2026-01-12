@@ -141,7 +141,7 @@ Return ONLY a valid JSON array with ${donorCount} donor objects. No other text.`
             throw new Error('Invalid response format from AI');
         }
 
-        // Normalize and validate donor data
+        // Normalize and validate donor data (including 990-PF fields)
         const normalizedDonors = donors.map((donor, index) => ({
             id: `ai-${Date.now()}-${index}`,
             name: donor.name || 'Unknown Foundation',
@@ -157,7 +157,14 @@ Return ONLY a valid JSON array with ${donorCount} donor objects. No other text.`
             annual_giving: donor.annual_giving || null,
             location: donor.location || '',
             source: 'ai_search',
+            // 990-PF data
+            ein: donor.ein || null,
+            fiscal_year_end: donor.fiscal_year_end || null,
+            principal_officer: donor.principal_officer || null,
+            officers: donor.officers || [],
         }));
+        
+        console.log('📊 [API/donor-search] First donor sample:', JSON.stringify(normalizedDonors[0], null, 2));
 
         return NextResponse.json({
             success: true,

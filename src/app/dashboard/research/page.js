@@ -803,8 +803,11 @@ export default function DonorResearchPage() {
             const elapsed = Date.now() - startTime;
             
             console.log('🤖 [Research] API RESPONSE received in', elapsed, 'ms');
+            console.log('🤖 [Research] Response status:', response.status);
             console.log('🤖 [Research] Success:', result.success);
             console.log('🤖 [Research] Donor count:', result.donors?.length);
+            console.log('🤖 [Research] Error (if any):', result.error);
+            console.log('🤖 [Research] Raw result keys:', Object.keys(result));
             
             if (result.success && result.donors && result.donors.length > 0) {
                 console.log('✅ [Research] Setting', result.donors.length, 'AI-generated donors to state');
@@ -841,6 +844,11 @@ export default function DonorResearchPage() {
         setRejectedIds(new Set());
         setLoading(false);
         isSearchingRef.current = false; // Reset ref to allow new searches
+        // Don't reset lastSearchRef here - it prevents immediate re-clicks
+        // But DO reset it after a delay to allow new different searches
+        setTimeout(() => {
+            lastSearchRef.current = null;
+        }, 2000);
         console.log('========================================');
         console.log('🏁 [Research] SEARCH COMPLETE');
         console.log('========================================');
