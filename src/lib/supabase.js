@@ -522,4 +522,204 @@ export async function signOut() {
     return true;
 }
 
+// ============================================================================
+// AI DONOR SEARCH RESULTS STORAGE
+// ============================================================================
+
+/**
+ * Save AI-generated donor search results to the database
+ * Creates donors in bulk and links them to a campaign
+ */
+export async function saveAIDonorResults(campaignId, donors, userId) {
+    console.log('💾 [Supabase] Saving', donors.length, 'AI donors to database...');
+    
+    try {
+        // Prepare donors for insertion
+        const donorsToInsert = donors.map(donor => ({
+            name: donor.name,
+            category: donor.category || 'Foundation',
+            city: donor.location?.split(',')[0]?.trim() || null,
+            state: donor.location?.split(',')[1]?.trim() || null,
+            website: donor.website || null,
+            focus_areas: donor.focus_areas || null,
+            funding_range: donor.funding_range || null,
+            alignment_score: donor.alignment_score || null,
+            total_assets: donor.total_assets || null,
+            total_giving: donor.annual_giving || null,
+            ai_insights: {
+                description: donor.description,
+                source: 'ai_search',
+                generated_at: new Date().toISOString(),
+            },
+            source: 'ai_generated',
+            created_by: userId || null,
+        }));
+        
+        // Insert donors in bulk
+        const { data: insertedDonors, error: donorsError } = await supabase
+            .from('donors')
+            .insert(donorsToInsert)
+            .select();
+        
+        if (donorsError) {
+            console.error('❌ [Supabase] Error inserting donors:', donorsError);
+            throw donorsError;
+        }
+        
+        console.log('✅ [Supabase] Inserted', insertedDonors.length, 'donors');
+        
+        // Link donors to campaign
+        if (campaignId && insertedDonors.length > 0) {
+            const campaignDonors = insertedDonors.map(donor => ({
+                campaign_id: campaignId,
+                donor_id: donor.id,
+                pipeline_stage: 'research',
+                ai_recommendation: donor.ai_insights?.description || null,
+            }));
+            
+            const { error: linkError } = await supabase
+                .from('campaign_donors')
+                .insert(campaignDonors);
+            
+            if (linkError) {
+                console.error('❌ [Supabase] Error linking donors to campaign:', linkError);
+                // Don't throw - donors are already saved
+            } else {
+                console.log('✅ [Supabase] Linked donors to campaign', campaignId);
+            }
+        }
+        
+        return insertedDonors;
+    } catch (error) {
+        console.error('❌ [Supabase] saveAIDonorResults failed:', error);
+        throw error;
+    }
+}
+
+/**
+ * Load AI donor search results for a campaign from the database
+ */
+export async function loadCampaignDonorsFromDB(campaignId) {
+    console.log('📥 [Supabase] Loading donors for campaign:', campaignId);
+    
+    try {
+        const { data, error } = await supabase
+            .from('campaign_donors')
+            .select(`
+                *,
+                donor:donors (*)
+            `)
+            .eq('campaign_id', campaignId)
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('❌ [Supabase] Error loading campaign donors:', error);
+            throw error;
+        }
+        
+        // Transform to match the expected format
+        const donors = data.map(cd => ({
+            id: cd.donor.id,
+            name: cd.donor.name,
+            category: cd.donor.category,
+            location: cd.donor.city && cd.donor.state ? `${cd.donor.city}, ${cd.donor.state}` : cd.donor.city || '',
+            website: cd.donor.website,
+            focus_areas: cd.donor.focus_areas,
+            funding_range: cd.donor.funding_range,
+            alignment_score: cd.donor.alignment_score,
+            total_assets: cd.donor.total_assets,
+            annual_giving: cd.donor.total_giving,
+            description: cd.donor.ai_insights?.description || cd.ai_recommendation,
+            deadline: cd.donor.deadline || 'Rolling',
+            status: cd.pipeline_stage || 'Research',
+            source: 'database',
+        }));
+        
+        console.log('✅ [Supabase] Loaded', donors.length, 'donors from database');
+        return donors;
+    } catch (error) {
+        console.error('❌ [Supabase] loadCampaignDonorsFromDB failed:', error);
+        return [];
+    }
+}
+
+/**
+ * Create a campaign in the database
+ */
+export async function createCampaignInDB(name, searchConfig, userId, orgId) {
+    console.log('📁 [Supabase] Creating campaign:', name);
+    
+    try {
+        const { data, error } = await supabase
+            .from('campaigns')
+            .insert({
+                name: name,
+                organization_id: orgId || null,
+                created_by: userId || null,
+                search_config: searchConfig,
+                status: 'active',
+            })
+            .select()
+            .single();
+        
+        if (error) {
+            console.error('❌ [Supabase] Error creating campaign:', error);
+            throw error;
+        }
+        
+        console.log('✅ [Supabase] Created campaign with ID:', data.id);
+        return data;
+    } catch (error) {
+        console.error('❌ [Supabase] createCampaignInDB failed:', error);
+        throw error;
+    }
+}
+
+/**
+ * Load all campaigns for an organization from the database
+ */
+export async function loadCampaignsFromDB(orgId, userId) {
+    console.log('📋 [Supabase] Loading campaigns...');
+    
+    try {
+        let query = supabase
+            .from('campaigns')
+            .select(`
+                *,
+                campaign_donors (count)
+            `)
+            .order('created_at', { ascending: false });
+        
+        // Filter by org or user if provided
+        if (orgId) {
+            query = query.eq('organization_id', orgId);
+        } else if (userId) {
+            query = query.eq('created_by', userId);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+            console.error('❌ [Supabase] Error loading campaigns:', error);
+            throw error;
+        }
+        
+        // Transform to match expected format
+        const campaigns = data.map(c => ({
+            id: c.id,
+            name: c.name,
+            status: c.status,
+            searchConfig: c.search_config,
+            createdAt: c.created_at,
+            donorCount: c.campaign_donors?.[0]?.count || 0,
+        }));
+        
+        console.log('✅ [Supabase] Loaded', campaigns.length, 'campaigns');
+        return campaigns;
+    } catch (error) {
+        console.error('❌ [Supabase] loadCampaignsFromDB failed:', error);
+        return [];
+    }
+}
+
 export default supabase;
