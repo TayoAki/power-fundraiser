@@ -23,11 +23,11 @@ const GRANT_SIZES = [
     "Over $1M",
 ];
 
-// Loading animations with messages - 9 stages x 10 seconds = 90 seconds total
+// Loading animations with messages - 6 stages x 10 seconds = 60 seconds total
 const LOADING_STAGES = [
     {
-        message: "Scanning 2 million foundation profiles...",
-        subtext: "Analyzing mission statements and focus areas",
+        message: "Scanning foundation databases...",
+        subtext: "Analyzing 2M+ foundation profiles and mission statements",
         icon: (
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="11" cy="11" r="8" />
@@ -46,34 +46,12 @@ const LOADING_STAGES = [
         ),
     },
     {
-        message: "Analyzing grant history patterns...",
-        subtext: "Identifying foundations actively funding your cause",
-        icon: (
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
-        ),
-    },
-    {
         message: "Researching local foundations near you...",
         subtext: "Finding community funders in your ZIP code area",
         icon: (
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
-            </svg>
-        ),
-    },
-    {
-        message: "Mapping warm connection pathways...",
-        subtext: "Finding board members and contacts in your network",
-        icon: (
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="5" cy="6" r="3" />
-                <circle cx="19" cy="6" r="3" />
-                <circle cx="12" cy="18" r="3" />
-                <path d="M5 9v3a4 4 0 0 0 4 4h2" />
-                <path d="M19 9v3a4 4 0 0 1-4 4h-2" />
             </svg>
         ),
     },
@@ -99,18 +77,8 @@ const LOADING_STAGES = [
         ),
     },
     {
-        message: "Generating personalized approach strategies...",
-        subtext: "Creating tailored outreach recommendations",
-        icon: (
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-            </svg>
-        ),
-    },
-    {
         message: "Finalizing your donor intelligence report...",
-        subtext: "Preparing your personalized funding matches",
+        subtext: "Preparing 50 personalized funding matches",
         icon: (
             <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />

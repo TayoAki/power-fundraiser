@@ -72,7 +72,7 @@ export async function POST(request) {
             zipCode,
             focusAreas,
             fundingRange,
-            donorCount = 100,
+            donorCount = 50,
         } = body;
 
         console.log('📋 [API/donor-search] Search params:', { organizationName, zipCode, donorCount });
@@ -106,11 +106,11 @@ Return ONLY a valid JSON array with ${donorCount} donor objects. No other text.`
             { role: 'user', content: userPrompt }
         ];
 
-        console.log('🤖 [API/donor-search] Calling AI with 5 min timeout...');
+        console.log('🤖 [API/donor-search] Calling AI with 60s timeout...');
         
-        // 5 minute timeout - wait for LLM to complete or timeout
+        // 60 second timeout - matches Vercel Pro limit
         const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('AI request timed out after 5 minutes')), 300000)
+            setTimeout(() => reject(new Error('AI request timed out after 60s')), 60000)
         );
         
         const aiPromise = generateJSON(messages, {

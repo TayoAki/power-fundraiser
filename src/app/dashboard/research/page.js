@@ -529,7 +529,7 @@ export default function DonorResearchPage() {
                                 mission: config.organizationMission || config.causeAreas?.join(', ') || '',
                                 zipCode: config.zipCode || config.targetRegion || '',
                                 focusAreas: config.causeAreas?.join(', ') || '',
-                                donorCount: 100,
+                                donorCount: 50,
                             }),
                         });
                         const result = await response.json();
@@ -603,7 +603,7 @@ export default function DonorResearchPage() {
                         mission: config.organizationMission || config.causeAreas?.join(', ') || '',
                         zipCode: config.zipCode || config.targetRegion || '',
                         focusAreas: config.causeAreas?.join(', ') || '',
-                        donorCount: 100,
+                        donorCount: 50,
                     }),
                 });
                 const result = await response.json();
@@ -662,7 +662,7 @@ export default function DonorResearchPage() {
                     mission: orgData.mission || searchConfig?.organizationMission || searchQuery,
                     zipCode: searchConfig?.zipCode || '',
                     focusAreas: searchConfig?.causeAreas?.join(', ') || searchQuery,
-                    donorCount: 100,
+                    donorCount: 50,
                 }),
             });
             const result = await response.json();
@@ -769,7 +769,7 @@ export default function DonorResearchPage() {
                 mission: config.organizationMission || config.causeAreas?.join(', ') || '',
                 zipCode: config.zipCode || config.targetRegion || '',
                 focusAreas: config.causeAreas?.join(', ') || '',
-                donorCount: 100,
+                donorCount: 50,
             };
             console.log('🤖 [Research] Params:', JSON.stringify(apiParams, null, 2));
             
