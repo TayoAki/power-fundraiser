@@ -6,7 +6,6 @@
  */
 
 import { NextResponse } from 'next/server';
-import { MOCK_FOUNDATIONS } from '@/lib/mockData';
 
 const MODAL_API_URL = 'https://tayo--unified-donor-discovery-api-discover.modal.run';
 
@@ -86,20 +85,11 @@ export async function POST(request) {
     } catch (error) {
         console.error('❌ [API/donor-search] Error:', error.message);
         
-        // Return mock data as fallback
-        console.log('⚠️ [API/donor-search] Returning mock data as fallback');
-        const fallbackDonors = MOCK_FOUNDATIONS.slice(0, 15).map((donor, index) => ({
-            ...donor,
-            id: `fallback-${Date.now()}-${index}`,
-            source: 'mock_fallback',
-        }));
-        
         return NextResponse.json({
-            success: true,
-            donors: fallbackDonors,
-            count: fallbackDonors.length,
-            fallback: true,
+            success: false,
             error: error.message,
-        });
+            donors: [],
+            count: 0,
+        }, { status: 500 });
     }
 }
