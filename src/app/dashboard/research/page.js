@@ -41,6 +41,7 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
     // Log donor data for debugging (only on first render when expanded)
     if (isExpanded) {
         console.log('📊 [DonorCard] Rendering:', donor.name);
+        console.log('  └─ source:', donor.source, '| category:', donor.category, '| isGovGrant:', isGovernmentGrant);
         console.log('  └─ location:', donor.location);
         console.log('  └─ focus_areas:', donor.focus_areas);
         console.log('  └─ alignment_score:', donor.alignment_score);
@@ -71,11 +72,18 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
         setIsGenerating(false);
     };
 
+    // Check if this is a government grant (no 990-PF data)
+    const isGovernmentGrant = donor.source === 'grants.gov' || 
+                               donor.category === 'Government' || 
+                               donor.category === 'Government Grant';
+    
     const tabs = [
         { id: 'insight', label: 'AI Strategy Insight' },
         { id: 'approach', label: 'Suggested Approach' },
-        { id: 'financial', label: '990-PF Financial Data' },
-        { id: 'people', label: 'Key People' },
+        // Only show 990-PF tab for foundations, not government grants
+        ...(isGovernmentGrant ? [] : [{ id: 'financial', label: '990-PF Financial Data' }]),
+        // Only show Key People for foundations
+        ...(isGovernmentGrant ? [{ id: 'details', label: 'Grant Details' }] : [{ id: 'people', label: 'Key People' }]),
     ];
 
     // Determine border and opacity based on state
@@ -494,6 +502,54 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                                         </div>
                                     ))}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Grant Details Tab - For Government Grants */}
+                        {activeTab === 'details' && (
+                            <div style={{ padding: '20px 24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                    <h4 style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e293b', letterSpacing: '0.05em', margin: 0 }}>
+                                        GOVERNMENT GRANT DETAILS
+                                    </h4>
+                                    <span style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '4px 10px',
+                                        backgroundColor: '#DBEAFE',
+                                        borderRadius: '100px',
+                                        fontSize: '0.6875rem',
+                                        fontWeight: 600,
+                                        color: '#1D4ED8',
+                                    }}>
+                                        Federal Grant
+                                    </span>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                                    <div style={{ padding: '16px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+                                        <div style={{ fontSize: '0.6875rem', color: '#94a3b8', marginBottom: '4px' }}>Award Ceiling</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>{formatCurrency(donor.award_ceiling || donor.total_assets)}</div>
+                                    </div>
+                                    <div style={{ padding: '16px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+                                        <div style={{ fontSize: '0.6875rem', color: '#94a3b8', marginBottom: '4px' }}>Award Floor</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>{formatCurrency(donor.award_floor || 0)}</div>
+                                    </div>
+                                    <div style={{ padding: '16px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+                                        <div style={{ fontSize: '0.6875rem', color: '#94a3b8', marginBottom: '4px' }}>Agency</div>
+                                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>{donor.agency_name || donor.name?.split(' ')[0] || 'Federal Agency'}</div>
+                                    </div>
+                                    <div style={{ padding: '16px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+                                        <div style={{ fontSize: '0.6875rem', color: '#94a3b8', marginBottom: '4px' }}>Close Date</div>
+                                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>{donor.close_date || 'Rolling'}</div>
+                                    </div>
+                                </div>
+                                {donor.eligibility && (
+                                    <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px' }}>
+                                        <div style={{ fontSize: '0.6875rem', color: '#15803d', marginBottom: '4px', fontWeight: 600 }}>ELIGIBILITY</div>
+                                        <div style={{ fontSize: '0.8125rem', color: '#166534' }}>{donor.eligibility}</div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
