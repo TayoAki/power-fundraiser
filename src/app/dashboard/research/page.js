@@ -38,6 +38,20 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
     const score = donor.alignment_score || 85;
     const isHighlyActive = score >= 95;
 
+    // Log donor data for debugging (only on first render when expanded)
+    if (isExpanded) {
+        console.log('📊 [DonorCard] Rendering:', donor.name);
+        console.log('  └─ location:', donor.location);
+        console.log('  └─ focus_areas:', donor.focus_areas);
+        console.log('  └─ alignment_score:', donor.alignment_score);
+        console.log('  └─ total_assets:', donor.total_assets);
+        console.log('  └─ annual_giving:', donor.annual_giving);
+        console.log('  └─ officers:', donor.officers?.length, 'people', donor.officers);
+        console.log('  └─ recent_grants:', donor.recent_grants?.length, 'grants', donor.recent_grants);
+        console.log('  └─ funding_range:', donor.funding_range);
+        console.log('  └─ description:', donor.description?.substring(0, 100) + '...');
+    }
+
     const generateInsight = async () => {
         if (isGenerating) return;
         setIsGenerating(true);
