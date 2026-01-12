@@ -1122,6 +1122,15 @@ export default function DonorResearchPage() {
         }
     };
 
+    // Debug logging for filter troubleshooting
+    console.log('🔍 [Filter Debug] donors state length:', donors.length);
+    console.log('🔍 [Filter Debug] categoryFilter:', categoryFilter);
+    console.log('🔍 [Filter Debug] statusFilter:', statusFilter);
+    console.log('🔍 [Filter Debug] searchQuery:', searchQuery || '(empty)');
+    if (donors.length > 0) {
+        console.log('🔍 [Filter Debug] First donor:', donors[0]?.name, '| category:', donors[0]?.category, '| source:', donors[0]?.source);
+    }
+
     const filteredDonors = donors.filter(d => {
         // Text search
         if (searchQuery) {
@@ -1154,6 +1163,8 @@ export default function DonorResearchPage() {
         // 'all' shows everything
         return true;
     });
+
+    console.log('🔍 [Filter Debug] filteredDonors length:', filteredDonors.length);
 
     // Sort: active donors by score, then pipeline items, then rejected at the very end
     const sortedDonors = [...filteredDonors].sort((a, b) => {
