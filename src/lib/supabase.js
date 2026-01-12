@@ -533,6 +533,20 @@ export async function signOut() {
 export async function saveAIDonorResults(campaignId, donors, userId) {
     console.log('💾 [Supabase] Saving', donors.length, 'AI donors to database...');
     
+    // Check if Supabase is configured
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.log('⚠️ [Supabase] Not configured, skipping DB save');
+        return [];
+    }
+    
+    // Check if campaignId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (campaignId && !uuidRegex.test(campaignId)) {
+        console.log('⚠️ [Supabase] Campaign ID is not a valid UUID, skipping campaign link:', campaignId);
+        // Still save donors, just don't link to campaign
+        campaignId = null;
+    }
+    
     try {
         // Prepare donors for insertion
         const donorsToInsert = donors.map(donor => ({
@@ -602,6 +616,20 @@ export async function saveAIDonorResults(campaignId, donors, userId) {
 export async function loadCampaignDonorsFromDB(campaignId) {
     console.log('📥 [Supabase] Loading donors for campaign:', campaignId);
     
+    // Check if campaignId is a valid UUID (Supabase uses UUIDs)
+    // localStorage mock IDs are like "campaign-1736..." which won't work
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!campaignId || !uuidRegex.test(campaignId)) {
+        console.log('⚠️ [Supabase] Campaign ID is not a valid UUID, skipping DB lookup:', campaignId);
+        return [];
+    }
+    
+    // Check if Supabase is configured
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.log('⚠️ [Supabase] Not configured, skipping DB lookup');
+        return [];
+    }
+    
     try {
         const { data, error } = await supabase
             .from('campaign_donors')
@@ -613,32 +641,37 @@ export async function loadCampaignDonorsFromDB(campaignId) {
             .order('created_at', { ascending: false });
         
         if (error) {
-            console.error('❌ [Supabase] Error loading campaign donors:', error);
-            throw error;
+            console.warn('⚠️ [Supabase] Error loading campaign donors:', error.message || error);
+            return []; // Return empty instead of throwing
+        }
+        
+        if (!data || data.length === 0) {
+            console.log('📭 [Supabase] No donors found in database for campaign');
+            return [];
         }
         
         // Transform to match the expected format
         const donors = data.map(cd => ({
-            id: cd.donor.id,
-            name: cd.donor.name,
-            category: cd.donor.category,
-            location: cd.donor.city && cd.donor.state ? `${cd.donor.city}, ${cd.donor.state}` : cd.donor.city || '',
-            website: cd.donor.website,
-            focus_areas: cd.donor.focus_areas,
-            funding_range: cd.donor.funding_range,
-            alignment_score: cd.donor.alignment_score,
-            total_assets: cd.donor.total_assets,
-            annual_giving: cd.donor.total_giving,
-            description: cd.donor.ai_insights?.description || cd.ai_recommendation,
-            deadline: cd.donor.deadline || 'Rolling',
+            id: cd.donor?.id,
+            name: cd.donor?.name,
+            category: cd.donor?.category,
+            location: cd.donor?.city && cd.donor?.state ? `${cd.donor.city}, ${cd.donor.state}` : cd.donor?.city || '',
+            website: cd.donor?.website,
+            focus_areas: cd.donor?.focus_areas,
+            funding_range: cd.donor?.funding_range,
+            alignment_score: cd.donor?.alignment_score,
+            total_assets: cd.donor?.total_assets,
+            annual_giving: cd.donor?.total_giving,
+            description: cd.donor?.ai_insights?.description || cd.ai_recommendation,
+            deadline: cd.donor?.deadline || 'Rolling',
             status: cd.pipeline_stage || 'Research',
             source: 'database',
-        }));
+        })).filter(d => d.id && d.name); // Filter out any invalid entries
         
         console.log('✅ [Supabase] Loaded', donors.length, 'donors from database');
         return donors;
     } catch (error) {
-        console.error('❌ [Supabase] loadCampaignDonorsFromDB failed:', error);
+        console.warn('⚠️ [Supabase] loadCampaignDonorsFromDB failed:', error.message || error);
         return [];
     }
 }
