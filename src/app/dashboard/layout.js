@@ -85,6 +85,7 @@ export default function DashboardLayout({ children }) {
     const pathname = usePathname();
     const router = useRouter();
     const [userInitials, setUserInitials] = useState('SJ');
+    const [orgName, setOrgName] = useState('My Organization');
     const [aiUsage, setAiUsage] = useState({ calls: 0, tokens: 0 });
     const [searchesRemaining, setSearchesRemaining] = useState(5);
 
@@ -106,6 +107,18 @@ export default function DashboardLayout({ children }) {
         if (email) {
             const initials = email.split('@')[0].slice(0, 2).toUpperCase();
             setUserInitials(initials);
+        }
+        
+        // Load organization name from localStorage
+        const storedOrgSettings = localStorage.getItem('organizationSettings');
+        if (storedOrgSettings) {
+            const orgSettings = JSON.parse(storedOrgSettings);
+            if (orgSettings.name) {
+                setOrgName(orgSettings.name);
+                // Use org name initials for avatar
+                const orgInitials = orgSettings.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                setUserInitials(orgInitials);
+            }
         }
         
         // Load AI usage from localStorage
@@ -255,8 +268,8 @@ export default function DashboardLayout({ children }) {
                                 <div className="avatar-status" />
                             </div>
                             <div className="user-info">
-                                <span className="user-name">Sarah Johnson</span>
-                                <span className="user-role">Administrator</span>
+                                <span className="user-name">{orgName}</span>
+                                <span className="user-role">Organization</span>
                             </div>
                             {icons.settings}
                         </Link>
