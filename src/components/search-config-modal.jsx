@@ -122,34 +122,40 @@ export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
         }));
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         console.log('========================================');
         console.log('🔘 [Modal] SEARCH BUTTON CLICKED');
         console.log('========================================');
         console.log('📝 [Modal] Form data:', JSON.stringify(formData, null, 2));
-        console.log('⏳ [Modal] Starting loading animation...');
+        console.log('⏳ [Modal] Starting loading animation AND API call...');
         
         setIsLoading(true);
         setLoadingStage(0);
 
-        // Cycle through loading stages
+        // Start loading animation (runs in parallel with API call)
         const interval = setInterval(() => {
             setLoadingStage(prev => {
                 if (prev >= LOADING_STAGES.length - 1) {
-                    clearInterval(interval);
-                    console.log('✅ [Modal] Loading animation complete, calling onSubmit...');
-                    setTimeout(() => {
-                        setIsLoading(false);
-                        console.log('📤 [Modal] Submitting form data to parent component');
-                        onSubmit?.(formData);
-                        onOpenChange?.(false);
-                    }, 2000);
-                    return prev;
+                    return prev; // Stay on last stage
                 }
-                console.log(`🔄 [Modal] Loading stage ${prev + 1}/${LOADING_STAGES.length}`);
+                console.log(`🔄 [Modal] Loading stage ${prev + 2}/${LOADING_STAGES.length}`);
                 return prev + 1;
             });
-        }, 10000); // 10 seconds per stage (9 stages x 10s = 90s total)
+        }, 10000); // 10 seconds per stage
+
+        // Call onSubmit IMMEDIATELY (this triggers the API call)
+        console.log('📤 [Modal] Calling onSubmit to trigger API...');
+        try {
+            await onSubmit?.(formData);
+            console.log('✅ [Modal] onSubmit completed');
+        } catch (error) {
+            console.error('❌ [Modal] onSubmit error:', error);
+        }
+        
+        // Clean up and close modal
+        clearInterval(interval);
+        setIsLoading(false);
+        onOpenChange?.(false);
     };
 
     if (!open) return null;
