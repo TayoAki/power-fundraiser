@@ -62,12 +62,21 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
         if (isGenerating) return;
         setIsGenerating(true);
         try {
+            // Pass comprehensive donor data to improve LLM results
+            const donorData = {
+                ...donor,
+                recent_grants: donor.grants || donor.recent_grants,
+                officers: donor.officers,
+            };
+            console.log('🧠 [DonorCard] Generating insight with data:', donorData.name, '| officers:', donorData.officers?.length, '| grants:', donorData.recent_grants?.length);
+            
             const response = await fetch('/api/ai/donor-insight', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ donor, organization }),
+                body: JSON.stringify({ donor: donorData, organization }),
             });
             const result = await response.json();
+            console.log('🧠 [DonorCard] Insight result:', result.success, result.insight);
             if (result.success && result.insight) {
                 setGeneratedInsight(result.insight);
             }
@@ -363,35 +372,71 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                                         </button>
                                     )}
                                 </div>
-                                <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.7, margin: 0 }}>
-                                    {insights.summary || donor.description || 'Click "Generate Insight" for AI-powered strategy recommendations...'}
-                                </p>
-                                {insights.talkingPoints?.length > 0 && (
-                                    <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                        <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748b', marginBottom: '8px' }}>KEY TALKING POINTS</div>
-                                        <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.8125rem', color: '#475569', lineHeight: 1.6 }}>
-                                            {insights.talkingPoints.map((point, i) => (
-                                                <li key={i}>{point}</li>
+                                {/* Why This is a Great Match */}
+                                <div style={{ marginBottom: '16px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                                        <span style={{ fontSize: '1rem' }}>💛</span>
+                                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1e293b' }}>Why This is a Great Match</span>
+                                    </div>
+                                    <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.7, margin: 0 }}>
+                                        {insights.summary || donor.description || 'Click "Generate Insight" for AI-powered strategy recommendations...'}
+                                    </p>
+                                </div>
+
+                                {/* Key Opportunities */}
+                                {insights.keyOpportunities?.length > 0 && (
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                                            <span style={{ fontSize: '1rem' }}>🎯</span>
+                                            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1e293b' }}>Key Opportunities</span>
+                                        </div>
+                                        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.8125rem', color: '#475569', lineHeight: 1.8 }}>
+                                            {insights.keyOpportunities.map((opp, i) => (
+                                                <li key={i}>{opp}</li>
                                             ))}
                                         </ul>
                                     </div>
                                 )}
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
-                                    {focusTags[0] && (
-                                        <span style={{ padding: '6px 12px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.75rem', color: '#475569' }}>
-                                            Match: {focusTags[0].trim()}
-                                        </span>
-                                    )}
-                                    {donor.location && (
-                                        <span style={{ padding: '6px 12px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.75rem', color: '#475569' }}>
-                                            Region: {donor.location}
-                                        </span>
-                                    )}
-                                    {donor.funding_range && (
-                                        <span style={{ padding: '6px 12px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.75rem', color: '#475569' }}>
-                                            Grant Size: {donor.funding_range}
-                                        </span>
-                                    )}
+
+                                {/* Recommended Approach Strategy */}
+                                {insights.approachStrategy && (
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                                            <span style={{ fontSize: '1rem' }}>🎯</span>
+                                            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1e293b' }}>Recommended Approach Strategy</span>
+                                        </div>
+                                        <p style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.7, margin: 0 }}>
+                                            {insights.approachStrategy}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* 2x2 Grid: Decision Makers, Best Time, Grant History, Competitive Advantage */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: '16px' }}>
+                                    <div style={{ padding: '16px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>Decision Makers</div>
+                                        <div style={{ fontSize: '0.8125rem', color: '#475569' }}>
+                                            {insights.decisionMakers || donor.principal_officer || 'Contact program officer'}
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '16px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>Best Time to Apply</div>
+                                        <div style={{ fontSize: '0.8125rem', color: '#475569' }}>
+                                            {insights.bestTimeToApply || 'Check website for deadlines'}
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '16px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>Grant History</div>
+                                        <div style={{ fontSize: '0.8125rem', color: '#475569' }}>
+                                            {insights.grantHistory || `Typical range: ${donor.funding_range || 'Varies'}`}
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '16px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>Your Competitive Advantage</div>
+                                        <div style={{ fontSize: '0.8125rem', color: '#475569' }}>
+                                            {insights.competitiveAdvantage || 'Your mission alignment and local presence'}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
