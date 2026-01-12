@@ -384,7 +384,14 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.875rem' }}>{officer.name}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{officer.title}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                        {officer.title}
+                                                        {officer.compensation > 0 && (
+                                                            <span style={{ marginLeft: '8px', color: '#059669' }}>
+                                                                ${(officer.compensation / 1000).toFixed(0)}K
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
