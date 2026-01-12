@@ -75,7 +75,7 @@ export default function OnboardingPage() {
 
     const canProceed = () => {
         if (step === 1) {
-            return orgSettings.name.trim() && orgSettings.mission.trim();
+            return orgSettings.name.trim() && orgSettings.mission.trim() && orgSettings.vision.trim();
         }
         return true;
     };
@@ -133,20 +133,19 @@ export default function OnboardingPage() {
                     ))}
                 </div>
 
-                {/* Step 1: Organization */}
+                {/* Step 1: Organization Details */}
                 {step === 1 && (
                     <div>
-                        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🏢</div>
+                        <div style={{ marginBottom: '32px' }}>
                             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#1B365D', margin: '0 0 8px' }}>
-                                Welcome to Power Fundraiser
+                                Organization Details
                             </h1>
                             <p style={{ color: '#64748b', margin: 0 }}>
-                                Let's set up your organization for AI-powered donor matching
+                                AI automatically uses this information for donor matching, proposals, and outreach
                             </p>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>
                                     Organization Name <span style={{ color: '#ef4444' }}>*</span>
@@ -155,12 +154,12 @@ export default function OnboardingPage() {
                                     type="text"
                                     value={orgSettings.name}
                                     onChange={(e) => setOrgSettings({ ...orgSettings, name: e.target.value })}
-                                    placeholder="Your Nonprofit Name"
+                                    placeholder="Your Organization Name"
                                     style={{
                                         width: '100%',
                                         padding: '14px 16px',
-                                        border: '2px solid #e2e8f0',
-                                        borderRadius: '10px',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
                                         fontSize: '1rem',
                                         boxSizing: 'border-box',
                                         transition: 'border-color 0.2s',
@@ -175,27 +174,72 @@ export default function OnboardingPage() {
                                 <textarea
                                     value={orgSettings.mission}
                                     onChange={(e) => setOrgSettings({ ...orgSettings, mission: e.target.value })}
-                                    placeholder="Describe your organization's mission in 1-2 sentences. This helps our AI find the best donor matches."
+                                    placeholder="Describe your organization's mission..."
                                     style={{
                                         width: '100%',
                                         padding: '14px 16px',
-                                        border: '2px solid #e2e8f0',
-                                        borderRadius: '10px',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
                                         fontSize: '1rem',
-                                        minHeight: '120px',
+                                        minHeight: '100px',
                                         resize: 'vertical',
                                         boxSizing: 'border-box',
                                         fontFamily: 'inherit',
                                     }}
                                 />
-                                <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>
-                                    Used by AI for donor matching and proposal generation
+                                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', margin: '6px 0 0' }}>
+                                    AI uses this for donor matching and proposal generation
                                 </p>
                             </div>
 
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>
-                                    ZIP Code <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span>
+                                    Vision Statement <span style={{ color: '#ef4444' }}>*</span>
+                                </label>
+                                <textarea
+                                    value={orgSettings.vision}
+                                    onChange={(e) => setOrgSettings({ ...orgSettings, vision: e.target.value })}
+                                    placeholder="Describe your organization's vision..."
+                                    style={{
+                                        width: '100%',
+                                        padding: '14px 16px',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        fontSize: '1rem',
+                                        minHeight: '100px',
+                                        resize: 'vertical',
+                                        boxSizing: 'border-box',
+                                        fontFamily: 'inherit',
+                                    }}
+                                />
+                                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', margin: '6px 0 0' }}>
+                                    AI uses this for donor matching and outreach personalization
+                                </p>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>
+                                    Website
+                                </label>
+                                <input
+                                    type="url"
+                                    value={orgSettings.website}
+                                    onChange={(e) => setOrgSettings({ ...orgSettings, website: e.target.value })}
+                                    placeholder="https://yourorganization.org"
+                                    style={{
+                                        width: '100%',
+                                        padding: '14px 16px',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        fontSize: '1rem',
+                                        boxSizing: 'border-box',
+                                    }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>
+                                    ZIP Code
                                 </label>
                                 <input
                                     type="text"
@@ -204,13 +248,17 @@ export default function OnboardingPage() {
                                     placeholder="12345"
                                     maxLength={10}
                                     style={{
-                                        width: '150px',
+                                        width: '100%',
                                         padding: '14px 16px',
-                                        border: '2px solid #e2e8f0',
-                                        borderRadius: '10px',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
                                         fontSize: '1rem',
+                                        boxSizing: 'border-box',
                                     }}
                                 />
+                                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', margin: '6px 0 0' }}>
+                                    Used for geographic donor matching
+                                </p>
                             </div>
                         </div>
                     </div>
