@@ -878,6 +878,10 @@ export default function DonorResearchPage() {
             console.log('🤖 [Research] Donor count:', result.donors?.length);
             console.log('🤖 [Research] Error (if any):', result.error);
             console.log('🤖 [Research] Raw result keys:', Object.keys(result));
+            console.log('📋 [Research] FULL API RESPONSE JSON:', JSON.stringify(result, null, 2));
+            if (result.donors?.[0]) {
+                console.log('📋 [Research] FIRST DONOR FULL JSON:', JSON.stringify(result.donors[0], null, 2));
+            }
             
             if (result.success && result.donors && result.donors.length > 0) {
                 console.log('✅ [Research] Setting', result.donors.length, 'AI-generated donors to state');
