@@ -924,7 +924,7 @@ export default function DonorResearchPage() {
         
         setSearchConfig(config);
         setCampaignName(config.campaignName);
-        setSearchQuery(config.causeAreas.join(', ') || config.organizationMission?.slice(0, 50) || '');
+        setSearchQuery(''); // Clear search query - don't filter results by mission text
         setLoading(true);
         setHasSearched(true);
         
