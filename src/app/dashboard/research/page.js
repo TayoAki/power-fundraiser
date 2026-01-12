@@ -29,12 +29,33 @@ function formatCurrency(amount) {
 }
 
 // Donor Card Component
-function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline, onReject, isRejected }) {
+function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline, onReject, isRejected, organization }) {
     const [activeTab, setActiveTab] = useState('insight');
+    const [generatedInsight, setGeneratedInsight] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
     const focusTags = donor.focus_areas ? donor.focus_areas.split(',').slice(0, 3) : [];
-    const insights = donor.ai_insights || {};
+    const insights = generatedInsight || donor.ai_insights || {};
     const score = donor.alignment_score || 85;
     const isHighlyActive = score >= 95;
+
+    const generateInsight = async () => {
+        if (isGenerating) return;
+        setIsGenerating(true);
+        try {
+            const response = await fetch('/api/ai/donor-insight', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ donor, organization }),
+            });
+            const result = await response.json();
+            if (result.success && result.insight) {
+                setGeneratedInsight(result.insight);
+            }
+        } catch (error) {
+            console.error('Failed to generate insight:', error);
+        }
+        setIsGenerating(false);
+    };
 
     const tabs = [
         { id: 'insight', label: 'AI Strategy Insight' },
@@ -264,26 +285,66 @@ function DonorCard({ donor, isExpanded, onToggle, onAddToPipeline, isInPipeline,
                                 padding: '20px',
                                 border: '1px solid #f1f5f9',
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                    <h4 style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e293b', letterSpacing: '0.05em', margin: 0 }}>
-                                        AI STRATEGY INSIGHT
-                                    </h4>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#C9A227">
-                                        <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                                    </svg>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <h4 style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e293b', letterSpacing: '0.05em', margin: 0 }}>
+                                            AI STRATEGY INSIGHT
+                                        </h4>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#C9A227">
+                                            <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                                        </svg>
+                                    </div>
+                                    {!generatedInsight && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); generateInsight(); }}
+                                            disabled={isGenerating}
+                                            style={{
+                                                padding: '6px 12px',
+                                                backgroundColor: isGenerating ? '#f1f5f9' : '#C9A227',
+                                                color: isGenerating ? '#64748b' : 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                cursor: isGenerating ? 'wait' : 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                            }}
+                                        >
+                                            {isGenerating ? (
+                                                <>
+                                                    <span style={{ animation: 'spin 1s linear infinite' }}>⟳</span>
+                                                    Generating...
+                                                </>
+                                            ) : (
+                                                <>✨ Generate Insight</>
+                                            )}
+                                        </button>
+                                    )}
                                 </div>
                                 <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.7, margin: 0 }}>
-                                    {insights.summary || donor.description || 'Analysis pending...'}
+                                    {insights.summary || donor.description || 'Click "Generate Insight" for AI-powered strategy recommendations...'}
                                 </p>
+                                {insights.talkingPoints?.length > 0 && (
+                                    <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748b', marginBottom: '8px' }}>KEY TALKING POINTS</div>
+                                        <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.8125rem', color: '#475569', lineHeight: 1.6 }}>
+                                            {insights.talkingPoints.map((point, i) => (
+                                                <li key={i}>{point}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                                 <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
                                     {focusTags[0] && (
                                         <span style={{ padding: '6px 12px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.75rem', color: '#475569' }}>
                                             Match: {focusTags[0].trim()}
                                         </span>
                                     )}
-                                    {donor.state && (
+                                    {donor.location && (
                                         <span style={{ padding: '6px 12px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.75rem', color: '#475569' }}>
-                                            Region: {donor.state}
+                                            Region: {donor.location}
                                         </span>
                                     )}
                                     {donor.funding_range && (
@@ -1746,6 +1807,7 @@ export default function DonorResearchPage() {
                                     isInPipeline={pipelineIds.has(donor.id)}
                                     onReject={handleReject}
                                     isRejected={rejectedIds.has(donor.id)}
+                                    organization={searchConfig}
                                 />
                             ))
                         )}
