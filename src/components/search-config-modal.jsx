@@ -94,6 +94,7 @@ export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
         organizationName: "",
         organizationMission: "",
         strategicGoals: "",
+        focusAreas: "",
         targetRegion: "Pacific Northwest (USA)",
         grantSize: "$100k - $500k",
         causeAreas: [],
@@ -715,6 +716,31 @@ export function SearchConfigModal({ open, onOpenChange, onSubmit }) {
                                     fontFamily: 'inherit',
                                 }}
                             />
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#64748b', marginBottom: '8px' }}>
+                                Focus Areas
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.focusAreas}
+                                onChange={(e) => setFormData(prev => ({ ...prev, focusAreas: e.target.value }))}
+                                placeholder="STEM education, youth development, technology access..."
+                                style={{
+                                    width: '100%',
+                                    padding: '14px 16px',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9375rem',
+                                    color: '#1e293b',
+                                    outline: 'none',
+                                    boxSizing: 'border-box',
+                                }}
+                            />
+                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px', margin: '6px 0 0 0' }}>
+                                Comma-separated keywords to match with donor priorities
+                            </p>
                         </div>
                     </div>
 
