@@ -598,6 +598,12 @@ export default function NetworkPage() {
 
     // Filter organizations based on search AND filters
     const filteredOrgs = Object.values(groupedByOrg).filter(org => {
+        // Campaign filter - filter by campaign name
+        if (campaignFilter !== 'all') {
+            const campaign = availableCampaigns.find(c => c.id === campaignFilter);
+            if (campaign && org.campaignName !== campaign.name) return false;
+        }
+        
         // Text search
         if (searchFilter) {
             const term = searchFilter.toLowerCase();
