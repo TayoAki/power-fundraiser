@@ -486,21 +486,36 @@ Best regards,
             // First try to load from cachedDonors (AI-generated)
             const campaign = getCampaignById(campaignId);
             if (campaign?.cachedDonors && campaign.cachedDonors.length > 0) {
-                orgs = campaign.cachedDonors.map(donor => ({
-                    id: donor.id,
-                    name: donor.name,
-                    initials: donor.name.split(' ').map(w => w[0]).join('').slice(0, 2),
-                    location: donor.location || 'Unknown',
-                    funding: donor.funding_range || '$50K - $200K',
-                    status: 'Active',
-                    step: null,
-                    contactCount: 0,
-                    contacts: [],
-                    foundation: donor,
-                    focusAreas: donor.focus_areas,
-                    alignmentScore: donor.alignment_score,
-                    aiInsights: { summary: donor.description },
-                }));
+                orgs = campaign.cachedDonors.map(donor => {
+                    // Extract officers as contacts
+                    const contacts = (donor.officers || []).map((officer, idx) => ({
+                        id: `officer-${donor.id}-${idx}`,
+                        name: officer.name || officer.person_name || 'Unknown',
+                        title: officer.title || officer.role || 'Officer',
+                        role: officer.title?.toLowerCase().includes('director') || officer.title?.toLowerCase().includes('president') 
+                            ? 'Decision Maker' 
+                            : 'Influencer',
+                        email: officer.email || '',
+                        status: 'New',
+                        source: '990-PF',
+                    }));
+                    
+                    return {
+                        id: donor.id,
+                        name: donor.name,
+                        initials: donor.name.split(' ').map(w => w[0]).join('').slice(0, 2),
+                        location: donor.location || 'Unknown',
+                        funding: donor.funding_range || '$50K - $200K',
+                        status: 'Active',
+                        step: null,
+                        contactCount: contacts.length,
+                        contacts: contacts,
+                        foundation: donor,
+                        focusAreas: donor.focus_areas,
+                        alignmentScore: donor.alignment_score,
+                        aiInsights: { summary: donor.description },
+                    };
+                });
             } else {
                 // Fall back to campaign donors with details
                 const donorsWithDetails = getCampaignDonorsWithDetails(campaignId);
@@ -516,6 +531,19 @@ Best regards,
             allCampaigns.forEach(campaign => {
                 if (campaign.cachedDonors && campaign.cachedDonors.length > 0) {
                     campaign.cachedDonors.forEach(donor => {
+                        // Extract officers as contacts
+                        const contacts = (donor.officers || []).map((officer, idx) => ({
+                            id: `officer-${donor.id}-${idx}`,
+                            name: officer.name || officer.person_name || 'Unknown',
+                            title: officer.title || officer.role || 'Officer',
+                            role: officer.title?.toLowerCase().includes('director') || officer.title?.toLowerCase().includes('president') 
+                                ? 'Decision Maker' 
+                                : 'Influencer',
+                            email: officer.email || '',
+                            status: 'New',
+                            source: '990-PF',
+                        }));
+                        
                         orgs.push({
                             id: donor.id,
                             name: donor.name,
@@ -524,8 +552,8 @@ Best regards,
                             funding: donor.funding_range || '$50K - $200K',
                             status: 'Active',
                             step: null,
-                            contactCount: 0,
-                            contacts: [],
+                            contactCount: contacts.length,
+                            contacts: contacts,
                             foundation: donor,
                             focusAreas: donor.focus_areas,
                             alignmentScore: donor.alignment_score,
